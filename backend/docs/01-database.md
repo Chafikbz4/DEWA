@@ -65,7 +65,7 @@
 | `pharmacy_doc_type` | `AUTHORIZATION`, `PHARMACIST_DIPLOMA`, `ID`, `TAX`, `OTHER` |
 | `pharmacy_status` | `DRAFT`, `PENDING_VERIFICATION`, `VERIFIED`, `REJECTED`, `SUSPENDED` |
 | `proof_type` | `OTP`, `SIGNATURE`, `PHOTO_NO_FACE` |
-| `recipient_status` | `SENT`, `VIEWED`, `DECLINED`, `CLARIFICATION_ASKED`, `OFFERED`, `EXPIRED` |
+| `recipient_status` | `SENT`, `VIEWED`, `INTERESTED`, `DECLINED`, `CLARIFICATION_ASKED`, `OFFERED`, `EXPIRED` |
 | `refund_status` | `REQUESTED`, `APPROVED`, `PROCESSING`, `COMPLETED`, `REJECTED` |
 | `relationship` | `CHILD`, `PARENT`, `SPOUSE`, `OTHER` |
 | `request_item_source` | `PATIENT`, `OCR`, `PHARMACIST` |
@@ -285,6 +285,7 @@ erDiagram
     varchar_254_ email
     pharmacy_status status
     text rejection_reason
+    timestamp_with_time_zone submitted_for_review_at
     timestamp_with_time_zone verified_at
     uuid verified_by_admin_id FK
     boolean accepts_requests
@@ -406,6 +407,7 @@ erDiagram
   medicines {
     uuid id PK
     varchar_200_ brand_name
+    varchar_200_ name_ar
     varchar_200_ inn_dci
     varchar_100_ form
     varchar_100_ dosage
@@ -533,6 +535,7 @@ erDiagram
     uuid offer_id FK
     uuid request_item_id FK
     uuid medicine_id FK
+    integer position
     varchar_255_ name
     integer quantity_requested
     integer quantity_offered
@@ -557,6 +560,8 @@ erDiagram
     boolean delivery_available
     text pharmacy_note
     boolean requires_prescription_original
+    uuid created_by_user_id FK
+    timestamp_with_time_zone withdrawn_at
     timestamp_with_time_zone created_at
     timestamp_with_time_zone updated_at
     timestamp_with_time_zone sent_at
@@ -566,6 +571,7 @@ erDiagram
   medicines ||--o{ offer_items : "medicine_id (opt)"
   requests ||--o{ offers : "request_id"
   pharmacies ||--o{ offers : "pharmacy_id"
+  users ||--o{ offers : "created_by_user_id (opt)"
 ```
 
 ### 8. Messaging & notifications
@@ -1232,6 +1238,7 @@ Pharmacy legal + location data, verification status.
 | `email` | varchar(254) | yes |  |  |
 | `status` | pharmacy_status | no | 'DRAFT' |  |
 | `rejection_reason` | text | yes |  |  |
+| `submitted_for_review_at` | timestamp with time zone | yes |  |  |
 | `verified_at` | timestamp with time zone | yes |  |  |
 | `verified_by_admin_id` | uuid | yes |  | users.id (on delete set null) |
 | `accepts_requests` | boolean | no | false |  |
@@ -1406,6 +1413,7 @@ Medicine catalog. `reimbursable_flag` is informational only.
 |---|---|---|---|---|
 | `id` | uuid **PK** | no | gen_random_uuid() |  |
 | `brand_name` | varchar(200) | no |  |  |
+| `name_ar` | varchar(200) | yes |  |  |
 | `inn_dci` | varchar(200) | yes |  |  |
 | `form` | varchar(100) | yes |  |  |
 | `dosage` | varchar(100) | yes |  |  |
@@ -1419,7 +1427,7 @@ Medicine catalog. `reimbursable_flag` is informational only.
 | `created_at` | timestamp with time zone | no | now() |  |
 | `updated_at` | timestamp with time zone | no | now() |  |
 
-**Indexes:** `medicines_brand_idx` on (brand_name); `medicines_inn_idx` on (inn_dci); `medicines_category_idx` on (category, is_active); `medicines_regulatory_code_uq` (unique) on (regulatory_code)
+**Indexes:** `medicines_brand_idx` on (brand_name); `medicines_brand_trgm_idx` using gin on (brand_name); `medicines_name_ar_trgm_idx` using gin on (name_ar); `medicines_inn_trgm_idx` using gin on (inn_dci); `medicines_inn_idx` on (inn_dci); `medicines_category_idx` on (category, is_active); `medicines_regulatory_code_uq` (unique) on (regulatory_code)
 
 #### `pharmacy_stock`
 
@@ -1573,6 +1581,7 @@ Offer lines, alternatives and patient approval. line_total = unit × qty (DB CHE
 | `offer_id` | uuid | no |  | offers.id (on delete cascade) |
 | `request_item_id` | uuid | yes |  | request_items.id (on delete set null) |
 | `medicine_id` | uuid | yes |  | medicines.id (on delete set null) |
+| `position` | integer | no | 0 |  |
 | `name` | varchar(255) | no |  |  |
 | `quantity_requested` | integer | no | 0 |  |
 | `quantity_offered` | integer | no | 0 |  |
@@ -1606,6 +1615,8 @@ A pharmacy quote for a request. total = subtotal + fees (DB CHECK).
 | `delivery_available` | boolean | no | false |  |
 | `pharmacy_note` | text | yes |  |  |
 | `requires_prescription_original` | boolean | no | false |  |
+| `created_by_user_id` | uuid | yes |  | users.id (on delete set null) |
+| `withdrawn_at` | timestamp with time zone | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 | `updated_at` | timestamp with time zone | no | now() |  |
 | `sent_at` | timestamp with time zone | yes |  |  |

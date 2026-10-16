@@ -1,6 +1,7 @@
 import {
   applyDecorators,
   CanActivate,
+  createParamDecorator,
   ExecutionContext,
   Inject,
   Injectable,
@@ -13,6 +14,7 @@ import { Request } from 'express';
 import { Database, DRIZZLE } from '../../database/database.module';
 import { pharmacies, pharmacyStaff, StaffRole } from '../../database/schema';
 import { AppException } from '../errors/app.exception';
+import type { PharmacyContext } from './auth-user';
 
 const PHARMACY_ACCESS_KEY = 'auth:pharmacyAccess';
 
@@ -23,6 +25,8 @@ export interface PharmacyAccessOptions {
   staffRoles?: StaffRole[];
   /** Pharmacy features require VERIFIED status (default true). */
   requireVerified?: boolean;
+  /** Resolve the pharmacy from the user (a staff member works for one pharmacy) instead of a route param. */
+  fromUser?: boolean;
 }
 
 /**
@@ -52,9 +56,12 @@ export class PharmacyAccessGuard implements CanActivate {
     const user = req.user;
     if (!user) throw new AppException('UNAUTHORIZED');
 
-    const raw = req.params[opts.param ?? 'id'];
+    const raw = opts.fromUser ? undefined : req.params[opts.param ?? 'id'];
     const pharmacyId = typeof raw === 'string' ? raw : undefined;
-    if (!pharmacyId || !/^[0-9a-f-]{36}$/i.test(pharmacyId)) {
+    if (
+      !opts.fromUser &&
+      (!pharmacyId || !/^[0-9a-f-]{36}$/i.test(pharmacyId))
+    ) {
       throw new AppException('PHARMACY_NOT_FOUND');
     }
 
@@ -68,7 +75,7 @@ export class PharmacyAccessGuard implements CanActivate {
       .innerJoin(pharmacies, eq(pharmacies.id, pharmacyStaff.pharmacyId))
       .where(
         and(
-          eq(pharmacyStaff.pharmacyId, pharmacyId),
+          ...(pharmacyId ? [eq(pharmacyStaff.pharmacyId, pharmacyId)] : []),
           eq(pharmacyStaff.userId, user.id),
           eq(pharmacyStaff.isActive, true),
         ),
@@ -86,3 +93,14 @@ export class PharmacyAccessGuard implements CanActivate {
     return true;
   }
 }
+
+/** Pharmacy of the current staff member (routes under /pharmacy/...). */
+export const MyPharmacy = (
+  options: Omit<PharmacyAccessOptions, 'fromUser' | 'param'> = {},
+) => PharmacyAccess({ ...options, fromUser: true });
+
+/** The pharmacy resolved by PharmacyAccess / MyPharmacy. */
+export const CurrentPharmacy = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext): PharmacyContext =>
+    ctx.switchToHttp().getRequest<Request>().pharmacy as PharmacyContext,
+);

@@ -93,7 +93,8 @@ export class RegistrationService {
           latitude: p.latitude,
           longitude: p.longitude,
           phone: p.phone ? normalizePhone(p.phone) : null,
-          status: 'DRAFT',
+          status: 'PENDING_VERIFICATION',
+          submittedForReviewAt: new Date(),
         })
         .returning({ id: pharmacies.id });
       await tx.insert(pharmacyStaff).values({

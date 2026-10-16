@@ -36,6 +36,27 @@
       "when": 1792114022320,
       "tag": "0004_patient_domain",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792116100862,
+      "tag": "0005_pg_trgm",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792116103432,
+      "tag": "0006_pharmacy_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792151185640,
+      "tag": "0007_offer_item_position",
+      "breakpoints": true
     }
   ]
 }

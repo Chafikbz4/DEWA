@@ -16,6 +16,7 @@ import {
   patientApprovalEnum,
 } from './enums';
 import { medicines } from './catalog';
+import { users } from './identity';
 import { pharmacies } from './pharmacy';
 import { requestItems, requests } from './requests';
 
@@ -43,6 +44,10 @@ export const offers = pgTable(
     requiresPrescriptionOriginal: boolean('requires_prescription_original')
       .notNull()
       .default(false),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    withdrawnAt: tstz('withdrawn_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     sentAt: tstz('sent_at'),
@@ -82,6 +87,8 @@ export const offerItems = pgTable(
     medicineId: uuid('medicine_id').references(() => medicines.id, {
       onDelete: 'set null',
     }),
+    /** Display order of the line in the offer. */
+    position: integer('position').notNull().default(0),
     name: varchar('name', { length: 255 }).notNull(),
     quantityRequested: integer('quantity_requested').notNull().default(0),
     quantityOffered: integer('quantity_offered').notNull().default(0),

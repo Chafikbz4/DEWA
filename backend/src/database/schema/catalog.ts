@@ -20,6 +20,8 @@ export const medicines = pgTable(
   {
     id: pk(),
     brandName: varchar('brand_name', { length: 200 }).notNull(),
+    /** Arabic commercial name (optional). */
+    nameAr: varchar('name_ar', { length: 200 }),
     /** International non-proprietary name (DCI). */
     innDci: varchar('inn_dci', { length: 200 }),
     form: varchar('form', { length: 100 }),
@@ -39,6 +41,16 @@ export const medicines = pgTable(
   },
   (t) => [
     index('medicines_brand_idx').on(t.brandName),
+    // Trigram indexes for fuzzy search (fr / ar / DCI). Requires pg_trgm (migration 0005).
+    index('medicines_brand_trgm_idx').using(
+      'gin',
+      t.brandName.op('gin_trgm_ops'),
+    ),
+    index('medicines_name_ar_trgm_idx').using(
+      'gin',
+      t.nameAr.op('gin_trgm_ops'),
+    ),
+    index('medicines_inn_trgm_idx').using('gin', t.innDci.op('gin_trgm_ops')),
     index('medicines_inn_idx').on(t.innDci),
     index('medicines_category_idx').on(t.category, t.isActive),
     uniqueIndex('medicines_regulatory_code_uq').on(t.regulatoryCode),

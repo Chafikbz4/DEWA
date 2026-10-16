@@ -58,6 +58,7 @@ export const pharmacies = pgTable(
     email: varchar('email', { length: 254 }),
     status: pharmacyStatusEnum('status').notNull().default('DRAFT'),
     rejectionReason: text('rejection_reason'),
+    submittedForReviewAt: tstz('submitted_for_review_at'),
     verifiedAt: tstz('verified_at'),
     verifiedByAdminId: uuid('verified_by_admin_id').references(() => users.id, {
       onDelete: 'set null',

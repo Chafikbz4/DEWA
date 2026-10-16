@@ -17,7 +17,12 @@ import { validateEnv } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
+import { DeliveryConfigModule } from './modules/delivery-config/delivery-config.module';
 import { FilesModule } from './modules/files/files.module';
+import { MessagingCoreModule } from './modules/messaging/messaging-core.module';
+import { OffersModule } from './modules/offers/offers.module';
+import { SupportModule } from './modules/support/support.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
 import { PatientsModule } from './modules/patients/patients.module';
@@ -63,6 +68,11 @@ import { UsersModule } from './modules/users/users.module';
     CommonModule,
     FilesModule,
     GeoModule,
+    MessagingCoreModule,
+    DeliveryConfigModule,
+    CatalogModule,
+    OffersModule,
+    SupportModule,
     PatientsModule,
     RequestsModule,
     AuthModule,

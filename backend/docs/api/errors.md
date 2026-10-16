@@ -90,3 +90,34 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `REQUEST_ITEM_LOCKED` | 409 | Cet article a été confirmé par le pharmacien et ne peut plus être modifié. | تم تأكيد هذا العنصر من طرف الصيدلي ولا يمكن تعديله. |
 | `REQUEST_HAS_ORDER` | 409 | Une commande existe pour cette demande : annulez la commande. | يوجد طلب شراء مرتبط بهذا الطلب: قم بإلغاء طلب الشراء. |
 | `CHIFA_DATA_REQUIRED` | 400 | La carte Chifa, le numéro d'assuré et le nom du titulaire sont requis. | بطاقة الشفاء ورقم المؤمن واسم صاحب البطاقة مطلوبة. |
+| `PHARMACY_FIELD_LOCKED` | 403 | Ce champ légal ne peut plus être modifié après vérification. Contactez le support. | لا يمكن تعديل هذا الحقل القانوني بعد التحقق. تواصل مع الدعم. |
+| `PHARMACY_DOCUMENT_NOT_FOUND` | 404 | Document introuvable. | المستند غير موجود. |
+| `PHARMACY_DOCUMENT_LOCKED` | 409 | Ce document a déjà été examiné et ne peut plus être supprimé. | تمت مراجعة هذا المستند ولا يمكن حذفه. |
+| `PHARMACY_DOCUMENTS_MISSING` | 400 | Documents obligatoires manquants : {types}. | مستندات إلزامية ناقصة: {types}. |
+| `PHARMACY_VERIFICATION_NOT_ALLOWED` | 409 | La pharmacie ne peut pas être soumise à vérification dans son état actuel. | لا يمكن تقديم الصيدلية للتحقق في حالتها الحالية. |
+| `STAFF_NOT_FOUND` | 404 | Membre du personnel introuvable. | الموظف غير موجود. |
+| `STAFF_CANNOT_MODIFY_OWNER` | 403 | Le titulaire de la pharmacie ne peut pas être modifié ici. | لا يمكن تعديل مالك الصيدلية هنا. |
+| `STAFF_LICENSE_REQUIRED` | 400 | Un numéro d'inscription de pharmacien est requis pour ce rôle. | رقم تسجيل الصيدلي مطلوب لهذا الدور. |
+| `PAYOUT_ACCOUNT_NOT_FOUND` | 404 | Compte de versement introuvable. | حساب التحويل غير موجود. |
+| `SERVICE_AREA_NOT_FOUND` | 404 | Zone desservie introuvable. | منطقة الخدمة غير موجودة. |
+| `ON_DUTY_NOT_FOUND` | 404 | Période de garde introuvable. | فترة المناوبة غير موجودة. |
+| `OPENING_HOURS_INVALID` | 400 | Horaires invalides : chaque jour doit être fermé, ouvert 24h/24 ou avoir des heures d'ouverture et de fermeture. | أوقات غير صالحة: يجب أن يكون كل يوم مغلقًا أو مفتوحًا 24/24 أو بأوقات فتح وغلق. |
+| `MEDICINE_NOT_FOUND` | 404 | Médicament introuvable dans le catalogue. | الدواء غير موجود في الدليل. |
+| `STOCK_NOT_FOUND` | 404 | Aucune ligne de stock pour ce médicament. | لا يوجد مخزون لهذا الدواء. |
+| `STOCK_IMPORT_INVALID_FILE` | 400 | Fichier CSV invalide ou vide. | ملف CSV غير صالح أو فارغ. |
+| `RECIPIENT_CLOSED` | 409 | Votre pharmacie ne peut plus agir sur cette demande. | لم يعد بإمكان صيدليتك التصرف في هذا الطلب. |
+| `CLARIFICATION_NOT_ALLOWED` | 409 | Une question ne peut pas être posée dans l'état actuel de la demande. | لا يمكن طرح سؤال في الحالة الحالية للطلب. |
+| `OFFER_NOT_FOUND` | 404 | Proposition introuvable. | العرض غير موجود. |
+| `OFFER_ALREADY_EXISTS` | 409 | Votre pharmacie a déjà une proposition active pour cette demande. | لصيدليتك عرض نشط بالفعل لهذا الطلب. |
+| `OFFER_NOT_EDITABLE` | 409 | Seules les propositions en brouillon peuvent être modifiées. | يمكن تعديل العروض المسودة فقط. |
+| `OFFER_NOT_SENDABLE` | 422 | La proposition doit contenir au moins un article disponible. | يجب أن يحتوي العرض على عنصر متوفر واحد على الأقل. |
+| `OFFER_NOT_WITHDRAWABLE` | 409 | Cette proposition ne peut plus être retirée. | لم يعد بالإمكان سحب هذا العرض. |
+| `OFFER_ALTERNATIVE_REQUIRES_PHARMACIST` | 403 | Seul un pharmacien peut proposer une substitution. | يمكن للصيدلي فقط اقتراح بديل. |
+| `OFFER_ITEM_RESTRICTED` | 422 | Cet article ne peut pas être proposé en ligne (catégorie restreinte). | لا يمكن عرض هذا العنصر عبر الإنترنت (فئة مقيدة). |
+| `OFFER_ITEM_INVALID` | 400 | Un article de la proposition ne correspond pas à la demande. | أحد عناصر العرض لا يطابق الطلب. |
+| `OFFER_EXPIRED` | 410 | Cette proposition a expiré. | انتهت صلاحية هذا العرض. |
+| `OFFER_DELIVERY_NOT_AVAILABLE` | 422 | La livraison ne peut pas être proposée pour cette demande. | لا يمكن اقتراح التوصيل لهذا الطلب. |
+| `DELIVERY_ZONE_NOT_COVERED` | 422 | Aucune zone de livraison ne couvre cette adresse. | لا توجد منطقة توصيل تغطي هذا العنوان. |
+| `OFFER_ITEM_APPROVAL_NOT_PENDING` | 409 | Aucune approbation n'est attendue pour cet article. | لا توجد موافقة مطلوبة لهذا العنصر. |
+| `COMPLAINT_NOT_FOUND` | 404 | Réclamation introuvable. | الشكوى غير موجودة. |
+| `COMPLAINT_CLOSED` | 409 | Cette réclamation est clôturée. | هذه الشكوى مغلقة. |

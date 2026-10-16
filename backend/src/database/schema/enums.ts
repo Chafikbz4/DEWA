@@ -161,6 +161,7 @@ export const chifaVerificationStatusEnum = pgEnum('chifa_verification_status', [
 export const recipientStatusEnum = pgEnum('recipient_status', [
   'SENT',
   'VIEWED',
+  'INTERESTED',
   'DECLINED',
   'CLARIFICATION_ASKED',
   'OFFERED',
