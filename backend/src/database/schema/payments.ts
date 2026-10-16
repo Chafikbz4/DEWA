@@ -104,10 +104,9 @@ export const refunds = pgTable(
     requestedBy: uuid('requested_by').references(() => users.id, {
       onDelete: 'set null',
     }),
-    approvedByAdminId: uuid('approved_by_admin_id').references(
-      () => users.id,
-      { onDelete: 'set null' },
-    ),
+    approvedByAdminId: uuid('approved_by_admin_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     providerRefundReference: varchar('provider_refund_reference', {
       length: 128,
     }),

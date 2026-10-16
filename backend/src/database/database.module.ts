@@ -14,6 +14,9 @@ export const PG_POOL = Symbol('PG_POOL');
 export const DRIZZLE = Symbol('DRIZZLE');
 
 export type Database = NodePgDatabase<typeof schema>;
+/** A transaction handle; accepted anywhere a Database is. */
+export type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+export type DbOrTx = Database | Tx;
 
 @Injectable()
 class PoolShutdown implements OnApplicationShutdown {
@@ -34,7 +37,7 @@ class PoolShutdown implements OnApplicationShutdown {
       useFactory: (config: ConfigService) =>
         new Pool({
           connectionString: config.getOrThrow<string>('DATABASE_URL'),
-          max: 10,
+          max: config.get<number>('DATABASE_POOL_MAX', 10),
         }),
     },
     {

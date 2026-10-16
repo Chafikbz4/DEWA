@@ -8,8 +8,6 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { resolve } from 'node:path';
 import { Client } from 'pg';
 
-config({ path: [process.env.ENV_FILE ?? '.env.local', '.env'], quiet: true });
-
 export async function runMigrations(url: string) {
   const client = new Client({ connectionString: url });
   await client.connect();
@@ -23,12 +21,19 @@ export async function runMigrations(url: string) {
 }
 
 if (require.main === module) {
+  // Only the CLI entry point reads env files – importing this module (e.g. from
+  // the e2e global setup) must never pull production credentials into process.env.
+  config({ path: [process.env.ENV_FILE ?? '.env.local', '.env'], quiet: true });
   const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL_UNPOOLED (or DATABASE_URL) is required');
+  if (!url)
+    throw new Error('DATABASE_URL_UNPOOLED (or DATABASE_URL) is required');
   runMigrations(url)
     .then(() => console.log('✓ migrations applied'))
     .catch((err: unknown) => {
-      console.error('✗ migration failed:', err instanceof Error ? err.message : err);
+      console.error(
+        '✗ migration failed:',
+        err instanceof Error ? err.message : err,
+      );
       process.exit(1);
     });
 }

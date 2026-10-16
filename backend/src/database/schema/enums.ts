@@ -147,10 +147,12 @@ export const ocrStatusEnum = pgEnum('ocr_status', [
   'COMPLETED',
   'FAILED',
 ]);
-export const chifaVerificationStatusEnum = pgEnum(
-  'chifa_verification_status',
-  ['NOT_VERIFIED', 'PENDING_OFFICIAL_CHECK', 'VERIFIED', 'FAILED'],
-);
+export const chifaVerificationStatusEnum = pgEnum('chifa_verification_status', [
+  'NOT_VERIFIED',
+  'PENDING_OFFICIAL_CHECK',
+  'VERIFIED',
+  'FAILED',
+]);
 export const recipientStatusEnum = pgEnum('recipient_status', [
   'SENT',
   'VIEWED',

@@ -66,10 +66,9 @@ export const orders = pgTable(
     validationNote: text('validation_note'),
     paymentDeadlineAt: tstz('payment_deadline_at'),
     cancelReason: text('cancel_reason'),
-    cancelledByUserId: uuid('cancelled_by_user_id').references(
-      () => users.id,
-      { onDelete: 'set null' },
-    ),
+    cancelledByUserId: uuid('cancelled_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     cancelledAt: tstz('cancelled_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

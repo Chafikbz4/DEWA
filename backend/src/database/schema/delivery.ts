@@ -46,10 +46,9 @@ export const deliveryCompanies = pgTable(
     adminUserId: uuid('admin_user_id').references(() => users.id, {
       onDelete: 'set null',
     }),
-    verifiedByAdminId: uuid('verified_by_admin_id').references(
-      () => users.id,
-      { onDelete: 'set null' },
-    ),
+    verifiedByAdminId: uuid('verified_by_admin_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     verifiedAt: tstz('verified_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -106,7 +105,9 @@ export const drivers = pgTable(
     vehicleType: vehicleTypeEnum('vehicle_type').notNull(),
     plateNumber: varchar('plate_number', { length: 20 }),
     licenseNumberEncrypted: text('license_number_encrypted'),
-    status: driverStatusEnum('status').notNull().default('PENDING_VERIFICATION'),
+    status: driverStatusEnum('status')
+      .notNull()
+      .default('PENDING_VERIFICATION'),
     isAvailable: boolean('is_available').notNull().default(false),
     currentLatitude: doublePrecision('current_latitude'),
     currentLongitude: doublePrecision('current_longitude'),
@@ -141,7 +142,9 @@ export const deliveryZones = pgTable(
     isActive: boolean('is_active').notNull().default(true),
     createdAt: createdAt(),
   },
-  (t) => [index('delivery_zones_wilaya_commune_idx').on(t.wilayaId, t.communeId)],
+  (t) => [
+    index('delivery_zones_wilaya_commune_idx').on(t.wilayaId, t.communeId),
+  ],
 );
 
 export const deliveryFeeRules = pgTable(
@@ -168,7 +171,11 @@ export const deliveryFeeRules = pgTable(
       'fee_rules_min_max_chk',
       sql`${t.minFeeCentimes} IS NULL OR ${t.maxFeeCentimes} IS NULL OR ${t.maxFeeCentimes} >= ${t.minFeeCentimes}`,
     ),
-    index('fee_rules_zone_active_idx').on(t.zoneId, t.isActive, t.effectiveFrom),
+    index('fee_rules_zone_active_idx').on(
+      t.zoneId,
+      t.isActive,
+      t.effectiveFrom,
+    ),
   ],
 );
 

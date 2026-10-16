@@ -66,10 +66,7 @@ export const pharmacyStock = pgTable(
       t.pharmacyId,
       t.medicineId,
     ),
-    index('pharmacy_stock_medicine_status_idx').on(
-      t.medicineId,
-      t.stockStatus,
-    ),
+    index('pharmacy_stock_medicine_status_idx').on(t.medicineId, t.stockStatus),
     check(
       'pharmacy_stock_quantity_chk',
       sql`${t.quantity} IS NULL OR ${t.quantity} >= 0`,

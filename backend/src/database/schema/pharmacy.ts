@@ -69,9 +69,7 @@ export const pharmacies = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    uniqueIndex('pharmacies_authorization_number_uq').on(
-      t.authorizationNumber,
-    ),
+    uniqueIndex('pharmacies_authorization_number_uq').on(t.authorizationNumber),
     index('pharmacies_status_created_idx').on(t.status, t.createdAt),
     index('pharmacies_wilaya_commune_idx').on(t.wilayaId, t.communeId),
     index('pharmacies_location_gix').using('gist', t.location),

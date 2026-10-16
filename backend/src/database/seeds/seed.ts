@@ -9,9 +9,7 @@ import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { hashPassword } from '../../common/crypto/password';
 import * as schema from '../schema';
-import geo from './data/algeria-geo.json';
-
-config({ path: [process.env.ENV_FILE ?? '.env.local', '.env'], quiet: true });
+import * as geo from './data/algeria-geo.json';
 
 type Db = NodePgDatabase<typeof schema>;
 
@@ -26,11 +24,32 @@ export const PLATFORM_SETTINGS: {
     description:
       'If true, the patient pays before the pharmacist validates the order. Default false: pharmacist validates first.',
   },
-  { key: 'request_expiry_hours', value: 24, description: 'Hours before an unanswered request expires.' },
-  { key: 'offer_validity_hours', value: 12, description: 'Default validity of a pharmacy offer, in hours.' },
-  { key: 'payment_deadline_minutes', value: 30, description: 'Minutes the patient has to pay an accepted offer.' },
-  { key: 'max_pharmacies_per_request', value: 5, description: 'Maximum pharmacies a single request is sent to.' },
-  { key: 'delivery_enabled', value: false, description: 'Global switch for home delivery (off until delivery partners and legal review are in place).' },
+  {
+    key: 'request_expiry_hours',
+    value: 24,
+    description: 'Hours before an unanswered request expires.',
+  },
+  {
+    key: 'offer_validity_hours',
+    value: 12,
+    description: 'Default validity of a pharmacy offer, in hours.',
+  },
+  {
+    key: 'payment_deadline_minutes',
+    value: 30,
+    description: 'Minutes the patient has to pay an accepted offer.',
+  },
+  {
+    key: 'max_pharmacies_per_request',
+    value: 5,
+    description: 'Maximum pharmacies a single request is sent to.',
+  },
+  {
+    key: 'delivery_enabled',
+    value: false,
+    description:
+      'Global switch for home delivery (off until delivery partners and legal review are in place).',
+  },
   {
     key: 'sensitive_data_retention_days',
     value: 365,
@@ -40,46 +59,55 @@ export const PLATFORM_SETTINGS: {
 ];
 
 /** Example policies – ALL disabled. Enabling requires a reviewed legal basis (DB-enforced). */
-const ELIGIBILITY_POLICIES: (typeof schema.eligibilityPolicies.$inferInsert)[] = [
-  {
-    name: 'OTC products – example policy (pending legal review)',
-    appliesToCategory: 'OTC',
-    allowedOnlineRequest: true,
-    allowedOnlinePayment: true,
-    allowedDelivery: true,
-    requiresPharmacistValidation: true,
-    requiresOriginalPrescription: false,
-    legalBasisReference: null,
-    isEnabled: false,
-  },
-  {
-    name: 'Prescription medicines – example policy (pending legal review)',
-    appliesToCategory: 'PRESCRIPTION',
-    allowedOnlineRequest: true,
-    allowedOnlinePayment: false,
-    allowedDelivery: false,
-    requiresPharmacistValidation: true,
-    requiresOriginalPrescription: true,
-    legalBasisReference: null,
-    isEnabled: false,
-  },
-  ...(['CONTROLLED', 'PSYCHOTROPIC', 'COLD_CHAIN', 'OTHER'] as const).map((category) => ({
-    name: `${category} – blocked by default`,
-    appliesToCategory: category,
-    allowedOnlineRequest: false,
-    allowedOnlinePayment: false,
-    allowedDelivery: false,
-    requiresPharmacistValidation: true,
-    requiresOriginalPrescription: true,
-    legalBasisReference: null,
-    isEnabled: false,
-  })),
-];
+const ELIGIBILITY_POLICIES: (typeof schema.eligibilityPolicies.$inferInsert)[] =
+  [
+    {
+      name: 'OTC products – example policy (pending legal review)',
+      appliesToCategory: 'OTC',
+      allowedOnlineRequest: true,
+      allowedOnlinePayment: true,
+      allowedDelivery: true,
+      requiresPharmacistValidation: true,
+      requiresOriginalPrescription: false,
+      legalBasisReference: null,
+      isEnabled: false,
+    },
+    {
+      name: 'Prescription medicines – example policy (pending legal review)',
+      appliesToCategory: 'PRESCRIPTION',
+      allowedOnlineRequest: true,
+      allowedOnlinePayment: false,
+      allowedDelivery: false,
+      requiresPharmacistValidation: true,
+      requiresOriginalPrescription: true,
+      legalBasisReference: null,
+      isEnabled: false,
+    },
+    ...(['CONTROLLED', 'PSYCHOTROPIC', 'COLD_CHAIN', 'OTHER'] as const).map(
+      (category) => ({
+        name: `${category} – blocked by default`,
+        appliesToCategory: category,
+        allowedOnlineRequest: false,
+        allowedOnlinePayment: false,
+        allowedDelivery: false,
+        requiresPharmacistValidation: true,
+        requiresOriginalPrescription: true,
+        legalBasisReference: null,
+        isEnabled: false,
+      }),
+    ),
+  ];
 
 async function seedGeo(db: Db) {
   await db
     .insert(schema.wilayas)
-    .values(geo.wilayas.map((w) => ({ id: w.id, nameFr: w.name_fr, nameAr: w.name_ar })))
+    .values(
+      geo.wilayas.map((w) => ({
+        id: w.id,
+        nameFr: w.name_fr,
+        nameAr: w.name_ar,
+      })),
+    )
     .onConflictDoUpdate({
       target: schema.wilayas.id,
       set: { nameFr: sql`excluded.name_fr`, nameAr: sql`excluded.name_ar` },
@@ -121,7 +149,12 @@ async function seedPolicies(db: Db) {
     const existing = await db
       .select({ id: schema.eligibilityPolicies.id })
       .from(schema.eligibilityPolicies)
-      .where(eq(schema.eligibilityPolicies.appliesToCategory, policy.appliesToCategory))
+      .where(
+        eq(
+          schema.eligibilityPolicies.appliesToCategory,
+          policy.appliesToCategory,
+        ),
+      )
       .limit(1);
     if (!existing.length) {
       await db.insert(schema.eligibilityPolicies).values(policy);
@@ -134,8 +167,10 @@ async function seedPolicies(db: Db) {
 async function seedSuperAdmin(db: Db) {
   const email = process.env.SEED_SUPER_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_SUPER_ADMIN_PASSWORD;
-  if (!email || !password) return 'skipped (SEED_SUPER_ADMIN_EMAIL / SEED_SUPER_ADMIN_PASSWORD not set)';
-  if (password.length < 12) throw new Error('SEED_SUPER_ADMIN_PASSWORD must be at least 12 characters');
+  if (!email || !password)
+    return 'skipped (SEED_SUPER_ADMIN_EMAIL / SEED_SUPER_ADMIN_PASSWORD not set)';
+  if (password.length < 12)
+    throw new Error('SEED_SUPER_ADMIN_PASSWORD must be at least 12 characters');
 
   const [existing] = await db
     .select({ id: schema.users.id })
@@ -177,9 +212,13 @@ export async function runSeed(url: string) {
   const db = drizzle(pool, { schema });
   try {
     const geoResult = await seedGeo(db);
-    console.log(`✓ geo: ${geoResult.wilayas} wilayas, ${geoResult.communes} communes`);
+    console.log(
+      `✓ geo: ${geoResult.wilayas} wilayas, ${geoResult.communes} communes`,
+    );
     console.log(`✓ platform_settings: ${await seedSettings(db)} new key(s)`);
-    console.log(`✓ eligibility_policies: ${await seedPolicies(db)} new polic(ies), all disabled`);
+    console.log(
+      `✓ eligibility_policies: ${await seedPolicies(db)} new polic(ies), all disabled`,
+    );
     console.log(`✓ super admin: ${await seedSuperAdmin(db)}`);
   } finally {
     await pool.end();
@@ -187,6 +226,9 @@ export async function runSeed(url: string) {
 }
 
 if (require.main === module) {
+  // Only the CLI entry point reads env files – importing this module (e.g. from
+  // the e2e global setup) must never pull production credentials into process.env.
+  config({ path: [process.env.ENV_FILE ?? '.env.local', '.env'], quiet: true });
   const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is required');
   runSeed(url).catch((err: unknown) => {
