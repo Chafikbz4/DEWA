@@ -1,20 +1,70 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AccountStatusGuard } from './common/auth/account-status.guard';
+import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
+import { RolesGuard } from './common/auth/roles.guard';
+import { CommonModule } from './common/common.module';
+import {
+  AppThrottlerGuard,
+  throttlerOptionsFactory,
+} from './common/security/throttling';
+import { validateEnv } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
-import { HealthController } from './health/health.controller';
+import { AdminModule } from './modules/admin/admin.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { HealthController } from './modules/health/health.controller';
+import { PharmaciesModule } from './modules/pharmacies/pharmacies.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    // `neon deploy` / `neon env pull` write DATABASE_URL etc. into .env.local
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      cache: true,
+      // .env.local: Neon vars (`neon env pull`); .env: app secrets. ENV_FILE overrides (tests).
+      envFilePath: process.env.ENV_FILE
+        ? [process.env.ENV_FILE]
+        : ['.env.local', '.env'],
+      validate: validateEnv,
+    }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          issuer: 'dewa-api',
+          audience: 'dewa-clients',
+          algorithm: 'HS256',
+        },
+        verifyOptions: {
+          issuer: 'dewa-api',
+          audience: 'dewa-clients',
+          algorithms: ['HS256'],
+        },
+      }),
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: throttlerOptionsFactory,
     }),
     DatabaseModule,
+    CommonModule,
+    AuthModule,
+    UsersModule,
+    PharmaciesModule,
+    AdminModule,
   ],
-  controllers: [AppController, HealthController],
-  providers: [AppService],
+  controllers: [HealthController],
+  providers: [
+    // Order matters: rate limit → authenticate → account status → role.
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: AccountStatusGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}
