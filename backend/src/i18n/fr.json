@@ -122,7 +122,25 @@
     "MESSAGE_CONTAINS_PHONE": "Pour votre sécurité, ne partagez pas de numéro de téléphone dans la messagerie.",
     "MESSAGE_BLOCKED_CONTENT": "Ce message contient des termes non autorisés.",
     "MESSAGE_TYPE_NOT_ALLOWED": "Ce type de message n'est pas autorisé pour vous.",
-    "NOTIFICATION_NOT_FOUND": "Notification introuvable."
+    "NOTIFICATION_NOT_FOUND": "Notification introuvable.",
+    "ORDER_NOT_FOUND": "Commande introuvable.",
+    "ORDER_INVALID_TRANSITION": "Cette action n'est pas possible dans l'état actuel de la commande.",
+    "ORDER_ACTION_FORBIDDEN": "Vous ne pouvez pas effectuer cette action sur cette commande.",
+    "ORDER_VERSION_CONFLICT": "La commande vient d'être modifiée. Rechargez et réessayez.",
+    "ORDER_REASON_REQUIRED": "Un motif est requis pour cette action.",
+    "ORDER_NOT_CANCELLABLE": "Cette commande ne peut plus être annulée.",
+    "ORDER_CANCEL_REQUIRES_APPROVAL": "La commande est en préparation : l'annulation doit être acceptée par la pharmacie ou le support.",
+    "ORDER_ALTERNATIVES_PENDING": "Acceptez ou refusez chaque substitution proposée avant de valider.",
+    "ORDER_NOTHING_TO_ORDER": "Aucun article disponible dans cette proposition.",
+    "ORDER_OFFER_NOT_AVAILABLE": "Cette proposition n'est plus disponible.",
+    "ORDER_ITEM_OUT_OF_STOCK": "Un article n'est plus en stock. Contactez la pharmacie.",
+    "ORDER_DELIVERY_NOT_AVAILABLE": "La livraison n'est pas disponible pour cette commande.",
+    "ORDER_VALIDATION_CONFIRM_REQUIRED": "La validation pharmaceutique exige une confirmation explicite.",
+    "ORDER_COLLECTION_CODE_INVALID": "Code de retrait incorrect.",
+    "ORDER_COLLECTION_CODE_LOCKED": "Trop de codes incorrects. Le patient doit générer un nouveau code.",
+    "IDEMPOTENCY_KEY_INVALID": "En-tête Idempotency-Key invalide (8 à 128 caractères).",
+    "IDEMPOTENCY_KEY_REUSED": "Cette clé d'idempotence a déjà été utilisée pour une autre requête.",
+    "IDEMPOTENCY_IN_PROGRESS": "Une requête identique est déjà en cours de traitement."
   },
   "validation": {
     "default": "Valeur invalide.",
@@ -240,6 +258,10 @@
     "ADMIN_ALERT": {
       "title": "Alerte plateforme",
       "body": "{message}"
+    },
+    "COLLECTION_CODE": {
+      "title": "Code de retrait",
+      "body": "Présentez ce code à la pharmacie pour retirer la commande {reference} : {code}."
     }
   },
   "system": {
@@ -254,5 +276,77 @@
     "offer_sent": "La pharmacie a envoyé une proposition.",
     "offer_alternatives_pending": "La proposition contient des substitutions : approuvez ou refusez chacune d’elles.",
     "conversation_closed": "Conversation clôturée."
+  },
+  "labels": {
+    "order_status": {
+      "AWAITING_PAYMENT": "En attente de paiement",
+      "PAYMENT_PENDING": "Paiement en cours",
+      "PAYMENT_CONFIRMED": "Paiement confirmé",
+      "PHARMACIST_VALIDATION_PENDING": "Validation par le pharmacien",
+      "PREPARING": "En préparation",
+      "READY_FOR_PICKUP": "Prête",
+      "DELIVERY_ASSIGNED": "Livreur assigné",
+      "PICKED_UP": "Récupérée par le livreur",
+      "OUT_FOR_DELIVERY": "En cours de livraison",
+      "DELIVERED": "Livrée",
+      "COMPLETED": "Retirée",
+      "CANCELLED": "Annulée",
+      "REFUND_PENDING": "Remboursement en cours",
+      "REFUNDED": "Remboursée",
+      "FAILED": "Livraison échouée"
+    },
+    "order_status_description": {
+      "AWAITING_PAYMENT": "Le pharmacien a validé votre commande. Vous pouvez payer.",
+      "PAYMENT_PENDING": "Votre paiement est en cours de vérification.",
+      "PAYMENT_CONFIRMED": "Votre paiement est confirmé.",
+      "PHARMACIST_VALIDATION_PENDING": "Un pharmacien vérifie votre commande et votre ordonnance.",
+      "PREPARING": "La pharmacie prépare votre commande.",
+      "READY_FOR_PICKUP": "Votre commande est prête.",
+      "DELIVERY_ASSIGNED": "Un livreur va récupérer votre commande.",
+      "PICKED_UP": "Le livreur a récupéré votre commande.",
+      "OUT_FOR_DELIVERY": "Votre commande est en route.",
+      "DELIVERED": "Votre commande a été livrée.",
+      "COMPLETED": "Vous avez retiré votre commande.",
+      "CANCELLED": "La commande a été annulée.",
+      "REFUND_PENDING": "Le remboursement est en cours de traitement.",
+      "REFUNDED": "Le remboursement a été effectué.",
+      "FAILED": "La livraison n’a pas pu être effectuée ; la commande retourne à la pharmacie."
+    },
+    "request_status": {
+      "REQUEST_SUBMITTED": "Envoyée",
+      "AWAITING_PHARMACY_RESPONSE": "En attente des pharmacies",
+      "CLARIFICATION_REQUIRED": "Question de la pharmacie",
+      "OFFER_AVAILABLE": "Proposition disponible",
+      "OFFER_ACCEPTED": "Proposition acceptée",
+      "EXPIRED": "Expirée",
+      "CANCELLED": "Annulée"
+    },
+    "offer_status": {
+      "DRAFT": "Brouillon",
+      "SENT": "Envoyée",
+      "ACCEPTED": "Acceptée",
+      "REJECTED": "Non retenue",
+      "EXPIRED": "Expirée",
+      "WITHDRAWN": "Retirée"
+    },
+    "payment_status": {
+      "INITIATED": "Initié",
+      "PENDING": "En cours",
+      "CONFIRMED": "Confirmé",
+      "FAILED": "Échoué",
+      "CANCELLED": "Annulé",
+      "REFUND_PENDING": "Remboursement en cours",
+      "REFUNDED": "Remboursé"
+    },
+    "delivery_status": {
+      "AVAILABLE": "En attente d’un livreur",
+      "ASSIGNED": "Livreur assigné",
+      "PICKED_UP": "Récupérée",
+      "OUT_FOR_DELIVERY": "En route",
+      "DELIVERED": "Livrée",
+      "FAILED": "Échec",
+      "RETURNED": "Retournée à la pharmacie",
+      "CANCELLED": "Annulée"
+    }
   }
 }

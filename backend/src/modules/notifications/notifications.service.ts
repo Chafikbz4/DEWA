@@ -52,6 +52,7 @@ export const NOTIFICATION_TYPES = {
   PHARMACY_ORDER_UPDATE: ['IN_APP', 'PUSH'],
   DELIVERY_CODE: ['IN_APP', 'SMS'],
   PICKUP_CODE: ['IN_APP'],
+  COLLECTION_CODE: ['IN_APP', 'SMS'],
   DELIVERY_JOB_AVAILABLE: ['IN_APP', 'PUSH'],
   PAYMENT_CONFIRMED: ['IN_APP', 'PUSH'],
   PAYMENT_FAILED: ['IN_APP', 'PUSH'],
@@ -65,6 +66,7 @@ export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 /** Security-relevant types that cannot be muted. */
 const UNMUTABLE: NotificationType[] = [
   'DELIVERY_CODE',
+  'COLLECTION_CODE',
   'PICKUP_CODE',
   'ACCOUNT_STATUS_CHANGED',
 ];

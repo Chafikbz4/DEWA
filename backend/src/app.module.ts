@@ -24,6 +24,7 @@ import { MessagingCoreModule } from './modules/messaging/messaging-core.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OffersModule } from './modules/offers/offers.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { SupportModule } from './modules/support/support.module';
 import { GeoModule } from './modules/geo/geo.module';
@@ -78,6 +79,7 @@ import { UsersModule } from './modules/users/users.module';
     DeliveryConfigModule,
     CatalogModule,
     OffersModule,
+    OrdersModule,
     SupportModule,
     PatientsModule,
     RequestsModule,

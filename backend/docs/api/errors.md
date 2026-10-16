@@ -130,3 +130,21 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `MESSAGE_BLOCKED_CONTENT` | 422 | Ce message contient des termes non autorisés. | تحتوي هذه الرسالة على كلمات غير مسموح بها. |
 | `MESSAGE_TYPE_NOT_ALLOWED` | 403 | Ce type de message n'est pas autorisé pour vous. | نوع الرسالة هذا غير مسموح لك. |
 | `NOTIFICATION_NOT_FOUND` | 404 | Notification introuvable. | الإشعار غير موجود. |
+| `ORDER_NOT_FOUND` | 404 | Commande introuvable. | طلب الشراء غير موجود. |
+| `ORDER_INVALID_TRANSITION` | 409 | Cette action n'est pas possible dans l'état actuel de la commande. | هذا الإجراء غير ممكن في الحالة الحالية للطلب. |
+| `ORDER_ACTION_FORBIDDEN` | 403 | Vous ne pouvez pas effectuer cette action sur cette commande. | لا يمكنك تنفيذ هذا الإجراء على هذا الطلب. |
+| `ORDER_VERSION_CONFLICT` | 409 | La commande vient d'être modifiée. Rechargez et réessayez. | تم تعديل الطلب للتو. أعد التحميل وحاول مجددًا. |
+| `ORDER_REASON_REQUIRED` | 400 | Un motif est requis pour cette action. | يجب ذكر سبب لهذا الإجراء. |
+| `ORDER_NOT_CANCELLABLE` | 409 | Cette commande ne peut plus être annulée. | لم يعد بالإمكان إلغاء هذا الطلب. |
+| `ORDER_CANCEL_REQUIRES_APPROVAL` | 409 | La commande est en préparation : l'annulation doit être acceptée par la pharmacie ou le support. | الطلب قيد التحضير: يجب أن توافق الصيدلية أو الدعم على الإلغاء. |
+| `ORDER_ALTERNATIVES_PENDING` | 409 | Acceptez ou refusez chaque substitution proposée avant de valider. | وافق على كل بديل مقترح أو ارفضه قبل التأكيد. |
+| `ORDER_NOTHING_TO_ORDER` | 422 | Aucun article disponible dans cette proposition. | لا يوجد أي عنصر متوفر في هذا العرض. |
+| `ORDER_OFFER_NOT_AVAILABLE` | 409 | Cette proposition n'est plus disponible. | لم يعد هذا العرض متاحًا. |
+| `ORDER_ITEM_OUT_OF_STOCK` | 409 | Un article n'est plus en stock. Contactez la pharmacie. | أحد العناصر لم يعد متوفرًا. تواصل مع الصيدلية. |
+| `ORDER_DELIVERY_NOT_AVAILABLE` | 422 | La livraison n'est pas disponible pour cette commande. | التوصيل غير متاح لهذا الطلب. |
+| `ORDER_VALIDATION_CONFIRM_REQUIRED` | 400 | La validation pharmaceutique exige une confirmation explicite. | تتطلب المصادقة الصيدلانية تأكيدًا صريحًا. |
+| `ORDER_COLLECTION_CODE_INVALID` | 400 | Code de retrait incorrect. | رمز الاستلام غير صحيح. |
+| `ORDER_COLLECTION_CODE_LOCKED` | 429 | Trop de codes incorrects. Le patient doit générer un nouveau code. | رموز خاطئة كثيرة. يجب على المريض إنشاء رمز جديد. |
+| `IDEMPOTENCY_KEY_INVALID` | 400 | En-tête Idempotency-Key invalide (8 à 128 caractères). | ترويسة Idempotency-Key غير صالحة (من 8 إلى 128 حرفًا). |
+| `IDEMPOTENCY_KEY_REUSED` | 409 | Cette clé d'idempotence a déjà été utilisée pour une autre requête. | تم استخدام مفتاح عدم التكرار هذا لطلب آخر. |
+| `IDEMPOTENCY_IN_PROGRESS` | 409 | Une requête identique est déjà en cours de traitement. | طلب مماثل قيد المعالجة بالفعل. |

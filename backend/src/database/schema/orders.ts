@@ -13,7 +13,12 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createdAt, money, pk, tstz, updatedAt } from './_columns';
-import { fulfillmentTypeEnum, orderStatusEnum, roleEnum } from './enums';
+import {
+  fulfillmentTypeEnum,
+  orderStatusEnum,
+  roleEnum,
+  workflowVariantEnum,
+} from './enums';
 import { users } from './identity';
 import { offerItems, offers } from './offers';
 import { pharmacies } from './pharmacy';
@@ -49,6 +54,19 @@ export const orders = pgTable(
       .notNull()
       .references(() => pharmacies.id, { onDelete: 'restrict' }),
     status: orderStatusEnum('status').notNull().default('AWAITING_PAYMENT'),
+    /** Frozen at creation from platform_settings.payment_before_validation. */
+    workflowVariant: workflowVariantEnum('workflow_variant')
+      .notNull()
+      .default('VALIDATION_FIRST'),
+    /** When the current status was entered (timeouts). */
+    statusChangedAt: tstz('status_changed_at').notNull().defaultNow(),
+    /** Pickup orders: HMAC of the patient collection code + wrong attempts. */
+    collectionCodeHash: text('collection_code_hash'),
+    collectionCodeAttempts: integer('collection_code_attempts')
+      .notNull()
+      .default(0),
+    /** Set once the “no driver assigned” admin alert was sent. */
+    assignmentAlertedAt: tstz('assignment_alerted_at'),
     /** Optimistic lock – increment on every status change. */
     version: integer('version').notNull().default(1),
     fulfillmentType: fulfillmentTypeEnum('fulfillment_type').notNull(),

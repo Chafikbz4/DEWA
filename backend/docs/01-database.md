@@ -79,6 +79,7 @@
 | `staff_role` | `OWNER`, `PHARMACIST`, `ASSISTANT` |
 | `stock_status` | `IN_STOCK`, `LOW`, `OUT_OF_STOCK` |
 | `vehicle_type` | `MOTORCYCLE`, `CAR`, `VAN`, `BIKE` |
+| `order_workflow_variant` | `VALIDATION_FIRST`, `PAYMENT_FIRST` |
 
 ## ER diagrams (per domain)
 
@@ -671,6 +672,11 @@ erDiagram
     uuid patient_user_id FK
     uuid pharmacy_id FK
     order_status status
+    order_workflow_variant workflow_variant
+    timestamp_with_time_zone status_changed_at
+    text collection_code_hash
+    integer collection_code_attempts
+    timestamp_with_time_zone assignment_alerted_at
     integer version
     fulfillment_type fulfillment_type
     jsonb delivery_address_snapshot
@@ -971,6 +977,17 @@ erDiagram
     retention_job_status status
     text error_message
   }
+  idempotency_keys {
+    uuid id PK
+    uuid user_id FK
+    varchar_120_ scope
+    varchar_128_ key
+    varchar_64_ request_hash
+    varchar_20_ status
+    jsonb response
+    timestamp_with_time_zone created_at
+    timestamp_with_time_zone expires_at
+  }
   platform_settings {
     varchar_100_ key PK
     jsonb value
@@ -993,6 +1010,7 @@ erDiagram
   orders ||--o{ complaints : "order_id (opt)"
   users ||--o{ complaints : "reporter_user_id"
   users ||--o{ complaints : "assigned_admin_id (opt)"
+  users ||--o{ idempotency_keys : "user_id"
   users ||--o{ platform_settings : "updated_by (opt)"
   users ||--o{ sensitive_access_logs : "actor_user_id"
 ```
@@ -1782,6 +1800,11 @@ An accepted offer becomes an order. Optimistic lock `version`; one active order 
 | `patient_user_id` | uuid | no |  | users.id (on delete restrict) |
 | `pharmacy_id` | uuid | no |  | pharmacies.id (on delete restrict) |
 | `status` | order_status | no | 'AWAITING_PAYMENT' |  |
+| `workflow_variant` | order_workflow_variant | no | 'VALIDATION_FIRST' |  |
+| `status_changed_at` | timestamp with time zone | no | now() |  |
+| `collection_code_hash` | text | yes |  |  |
+| `collection_code_attempts` | integer | no | 0 |  |
+| `assignment_alerted_at` | timestamp with time zone | yes |  |  |
 | `version` | integer | no | 1 |  |
 | `fulfillment_type` | fulfillment_type | no |  |  |
 | `delivery_address_snapshot` | jsonb | yes |  |  |
@@ -2174,6 +2197,23 @@ Runs of the data-retention purge job.
 | `error_message` | text | yes |  |  |
 
 **Indexes:** `retention_jobs_resource_run_idx` on (resource_type, run_at)
+
+#### `idempotency_keys`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `user_id` | uuid | no |  | users.id (on delete cascade) |
+| `scope` | varchar(120) | no |  |  |
+| `key` | varchar(128) | no |  |  |
+| `request_hash` | varchar(64) | no |  |  |
+| `status` | varchar(20) | no |  |  |
+| `response` | jsonb | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+| `expires_at` | timestamp with time zone | no |  |  |
+
+**Indexes:** `idempotency_user_scope_key_uq` (unique) on (user_id, scope, key); `idempotency_expires_idx` on (expires_at)
 
 #### `platform_settings`
 

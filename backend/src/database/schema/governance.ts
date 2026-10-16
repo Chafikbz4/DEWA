@@ -152,3 +152,26 @@ export const dataRetentionJobs = pgTable(
   },
   (t) => [index('retention_jobs_resource_run_idx').on(t.resourceType, t.runAt)],
 );
+
+/** Idempotency-Key storage (24 h): first response replayed for identical retries. */
+export const idempotencyKeys = pgTable(
+  'idempotency_keys',
+  {
+    id: pk(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    scope: varchar('scope', { length: 120 }).notNull(),
+    key: varchar('key', { length: 128 }).notNull(),
+    requestHash: varchar('request_hash', { length: 64 }).notNull(),
+    /** IN_PROGRESS | COMPLETED */
+    status: varchar('status', { length: 20 }).notNull(),
+    response: jsonb('response'),
+    createdAt: createdAt(),
+    expiresAt: tstz('expires_at').notNull(),
+  },
+  (t) => [
+    uniqueIndex('idempotency_user_scope_key_uq').on(t.userId, t.scope, t.key),
+    index('idempotency_expires_idx').on(t.expiresAt),
+  ],
+);

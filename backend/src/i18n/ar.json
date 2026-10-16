@@ -122,7 +122,25 @@
     "MESSAGE_CONTAINS_PHONE": "حفاظًا على سلامتك، لا تشارك أرقام الهاتف في المراسلة.",
     "MESSAGE_BLOCKED_CONTENT": "تحتوي هذه الرسالة على كلمات غير مسموح بها.",
     "MESSAGE_TYPE_NOT_ALLOWED": "نوع الرسالة هذا غير مسموح لك.",
-    "NOTIFICATION_NOT_FOUND": "الإشعار غير موجود."
+    "NOTIFICATION_NOT_FOUND": "الإشعار غير موجود.",
+    "ORDER_NOT_FOUND": "طلب الشراء غير موجود.",
+    "ORDER_INVALID_TRANSITION": "هذا الإجراء غير ممكن في الحالة الحالية للطلب.",
+    "ORDER_ACTION_FORBIDDEN": "لا يمكنك تنفيذ هذا الإجراء على هذا الطلب.",
+    "ORDER_VERSION_CONFLICT": "تم تعديل الطلب للتو. أعد التحميل وحاول مجددًا.",
+    "ORDER_REASON_REQUIRED": "يجب ذكر سبب لهذا الإجراء.",
+    "ORDER_NOT_CANCELLABLE": "لم يعد بالإمكان إلغاء هذا الطلب.",
+    "ORDER_CANCEL_REQUIRES_APPROVAL": "الطلب قيد التحضير: يجب أن توافق الصيدلية أو الدعم على الإلغاء.",
+    "ORDER_ALTERNATIVES_PENDING": "وافق على كل بديل مقترح أو ارفضه قبل التأكيد.",
+    "ORDER_NOTHING_TO_ORDER": "لا يوجد أي عنصر متوفر في هذا العرض.",
+    "ORDER_OFFER_NOT_AVAILABLE": "لم يعد هذا العرض متاحًا.",
+    "ORDER_ITEM_OUT_OF_STOCK": "أحد العناصر لم يعد متوفرًا. تواصل مع الصيدلية.",
+    "ORDER_DELIVERY_NOT_AVAILABLE": "التوصيل غير متاح لهذا الطلب.",
+    "ORDER_VALIDATION_CONFIRM_REQUIRED": "تتطلب المصادقة الصيدلانية تأكيدًا صريحًا.",
+    "ORDER_COLLECTION_CODE_INVALID": "رمز الاستلام غير صحيح.",
+    "ORDER_COLLECTION_CODE_LOCKED": "رموز خاطئة كثيرة. يجب على المريض إنشاء رمز جديد.",
+    "IDEMPOTENCY_KEY_INVALID": "ترويسة Idempotency-Key غير صالحة (من 8 إلى 128 حرفًا).",
+    "IDEMPOTENCY_KEY_REUSED": "تم استخدام مفتاح عدم التكرار هذا لطلب آخر.",
+    "IDEMPOTENCY_IN_PROGRESS": "طلب مماثل قيد المعالجة بالفعل."
   },
   "validation": {
     "default": "قيمة غير صالحة.",
@@ -240,6 +258,10 @@
     "ADMIN_ALERT": {
       "title": "تنبيه المنصة",
       "body": "{message}"
+    },
+    "COLLECTION_CODE": {
+      "title": "رمز الاستلام",
+      "body": "قدّم هذا الرمز للصيدلية لاستلام الطلب {reference}: {code}."
     }
   },
   "system": {
@@ -254,5 +276,77 @@
     "offer_sent": "أرسلت الصيدلية عرضًا.",
     "offer_alternatives_pending": "يحتوي العرض على بدائل: وافق على كل بديل أو ارفضه.",
     "conversation_closed": "تم إغلاق المحادثة."
+  },
+  "labels": {
+    "order_status": {
+      "AWAITING_PAYMENT": "بانتظار الدفع",
+      "PAYMENT_PENDING": "الدفع قيد المعالجة",
+      "PAYMENT_CONFIRMED": "تم تأكيد الدفع",
+      "PHARMACIST_VALIDATION_PENDING": "مصادقة الصيدلي",
+      "PREPARING": "قيد التحضير",
+      "READY_FOR_PICKUP": "جاهز",
+      "DELIVERY_ASSIGNED": "تم تعيين عامل التوصيل",
+      "PICKED_UP": "استلمه عامل التوصيل",
+      "OUT_FOR_DELIVERY": "في الطريق",
+      "DELIVERED": "تم التسليم",
+      "COMPLETED": "تم الاستلام",
+      "CANCELLED": "ملغى",
+      "REFUND_PENDING": "الاسترداد قيد المعالجة",
+      "REFUNDED": "تم الاسترداد",
+      "FAILED": "فشل التوصيل"
+    },
+    "order_status_description": {
+      "AWAITING_PAYMENT": "صادق الصيدلي على طلبك. يمكنك الدفع.",
+      "PAYMENT_PENDING": "يجري التحقق من دفعتك.",
+      "PAYMENT_CONFIRMED": "تم تأكيد دفعتك.",
+      "PHARMACIST_VALIDATION_PENDING": "يتحقق صيدلي من طلبك ووصفتك.",
+      "PREPARING": "تقوم الصيدلية بتحضير طلبك.",
+      "READY_FOR_PICKUP": "طلبك جاهز.",
+      "DELIVERY_ASSIGNED": "سيستلم عامل التوصيل طلبك.",
+      "PICKED_UP": "استلم عامل التوصيل طلبك.",
+      "OUT_FOR_DELIVERY": "طلبك في الطريق.",
+      "DELIVERED": "تم تسليم طلبك.",
+      "COMPLETED": "لقد استلمت طلبك.",
+      "CANCELLED": "تم إلغاء الطلب.",
+      "REFUND_PENDING": "الاسترداد قيد المعالجة.",
+      "REFUNDED": "تم الاسترداد.",
+      "FAILED": "تعذر التوصيل؛ يعود الطلب إلى الصيدلية."
+    },
+    "request_status": {
+      "REQUEST_SUBMITTED": "مُرسل",
+      "AWAITING_PHARMACY_RESPONSE": "بانتظار الصيدليات",
+      "CLARIFICATION_REQUIRED": "سؤال من الصيدلية",
+      "OFFER_AVAILABLE": "يتوفر عرض",
+      "OFFER_ACCEPTED": "تم قبول عرض",
+      "EXPIRED": "منتهي الصلاحية",
+      "CANCELLED": "ملغى"
+    },
+    "offer_status": {
+      "DRAFT": "مسودة",
+      "SENT": "مُرسل",
+      "ACCEPTED": "مقبول",
+      "REJECTED": "غير مختار",
+      "EXPIRED": "منتهي الصلاحية",
+      "WITHDRAWN": "مسحوب"
+    },
+    "payment_status": {
+      "INITIATED": "تمت المباشرة",
+      "PENDING": "قيد المعالجة",
+      "CONFIRMED": "مؤكد",
+      "FAILED": "فاشل",
+      "CANCELLED": "ملغى",
+      "REFUND_PENDING": "الاسترداد قيد المعالجة",
+      "REFUNDED": "تم الاسترداد"
+    },
+    "delivery_status": {
+      "AVAILABLE": "بانتظار عامل توصيل",
+      "ASSIGNED": "تم تعيين عامل التوصيل",
+      "PICKED_UP": "تم الاستلام",
+      "OUT_FOR_DELIVERY": "في الطريق",
+      "DELIVERED": "تم التسليم",
+      "FAILED": "فشل",
+      "RETURNED": "أُعيد إلى الصيدلية",
+      "CANCELLED": "ملغى"
+    }
   }
 }

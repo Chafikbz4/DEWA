@@ -232,6 +232,10 @@ export const orderStatusEnum = pgEnum('order_status', [
   'REFUNDED',
   'FAILED',
 ]);
+export const workflowVariantEnum = pgEnum('order_workflow_variant', [
+  'VALIDATION_FIRST',
+  'PAYMENT_FIRST',
+]);
 export const fulfillmentTypeEnum = pgEnum('fulfillment_type', [
   'DELIVERY',
   'PICKUP',
