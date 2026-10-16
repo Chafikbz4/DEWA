@@ -7,9 +7,15 @@ import { AppException } from '../../common/errors/app.exception';
 import { Paginated } from '../../common/http/envelope';
 import { normalizeEmail, normalizePhone } from '../../common/utils/identifier';
 import { Database, DRIZZLE } from '../../database/database.module';
-import { staffProfiles, users } from '../../database/schema';
+import {
+  adminUserRoles,
+  patientProfiles,
+  staffProfiles,
+  users,
+} from '../../database/schema';
 import { AuditAction, AuditService } from '../audit/audit.service';
 import { TokenService } from '../auth/services/token.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   AdminUserDto,
   AdminUsersQueryDto,
@@ -39,6 +45,7 @@ export class AdminUsersService {
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly audit: AuditService,
     private readonly tokens: TokenService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** SUPER_ADMIN only. Admins start PENDING_VERIFICATION and activate on MFA enrolment. */
@@ -137,6 +144,53 @@ export class AdminUsersService {
     return Paginated.of(rows.map(present), total, q.page, q.limit);
   }
 
+  /** Account data only (names, contact, status) – never health data. Audited. */
+  async get(actor: AuthUser, userId: string, meta: RequestMeta) {
+    const [u] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
+      .limit(1);
+    if (!u) throw new AppException('USER_NOT_FOUND');
+    const [staff] = await this.db
+      .select({ first: staffProfiles.firstName, last: staffProfiles.lastName })
+      .from(staffProfiles)
+      .where(eq(staffProfiles.userId, userId));
+    const [patient] = await this.db
+      .select({
+        first: patientProfiles.firstName,
+        last: patientProfiles.lastName,
+      })
+      .from(patientProfiles)
+      .where(eq(patientProfiles.userId, userId));
+    const adminRoles =
+      u.role === 'ADMIN'
+        ? (
+            await this.db
+              .select({ r: adminUserRoles.adminRole })
+              .from(adminUserRoles)
+              .where(eq(adminUserRoles.userId, userId))
+          ).map((x) => x.r)
+        : [];
+    await this.audit.log({
+      action: AuditAction.ADMIN_USER_VIEWED,
+      actorUserId: actor.id,
+      actorRole: actor.role,
+      resourceType: 'user',
+      resourceId: userId,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+    const name = staff ?? patient;
+    return {
+      ...present(u),
+      first_name: name?.first ?? null,
+      last_name: name?.last ?? null,
+      preferred_language: u.preferredLanguage,
+      admin_roles: adminRoles,
+    };
+  }
+
   private async loadTarget(actor: AuthUser, userId: string) {
     if (actor.id === userId) throw new AppException('CANNOT_MODIFY_SELF');
     const [target] = await this.db
@@ -159,7 +213,7 @@ export class AdminUsersService {
     meta: RequestMeta,
   ) {
     const target = await this.loadTarget(actor, userId);
-    return this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       const [updated] = await tx
         .update(users)
         .set({ status: dto.status })
@@ -189,6 +243,13 @@ export class AdminUsersService {
       );
       return present(updated);
     });
+    if (target.status !== dto.status)
+      await this.notifications.notify({
+        userIds: [userId],
+        type: 'ACCOUNT_STATUS_CHANGED',
+        params: { label_key: `labels.account_status.${dto.status}` },
+      });
+    return result;
   }
 
   /** SUPER_ADMIN only. Forces re-login so the new role applies everywhere. */

@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -19,8 +21,13 @@ import {
   CurrentUser,
   ReqMeta,
   RequestMeta,
-  Roles,
 } from '../../common/auth/decorators';
+import { PERMISSIONS as P } from '../../common/auth/permissions';
+import {
+  RequirePermissions,
+  RequireSuperAdmin,
+} from '../../common/auth/permissions.guard';
+import { SuspendUserDto } from './dto/admin.dto';
 import { ApiEnvelope, ApiErrors } from '../../common/swagger/api-responses';
 import { AdminUsersService } from './admin-users.service';
 import {
@@ -32,6 +39,8 @@ import {
 } from './dto/admin-users.dto';
 
 const COMMON = [
+  'PERMISSION_DENIED',
+  'ADMIN_MFA_REQUIRED',
   'ROLE_FORBIDDEN',
   'AUTH_TOKEN_MISSING',
   'AUTH_SESSION_REVOKED',
@@ -45,7 +54,7 @@ export class AdminUsersController {
   constructor(private readonly service: AdminUsersService) {}
 
   @Post()
-  @Roles('SUPER_ADMIN')
+  @RequireSuperAdmin()
   @ApiOperation({
     summary: 'Create an ADMIN account (super admin only)',
     description:
@@ -62,7 +71,7 @@ export class AdminUsersController {
   }
 
   @Get()
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions(P.USERS_READ)
   @ApiOperation({
     summary: 'List users (filter, search, sort, paginate)',
     description: 'Audited (personal data access).',
@@ -77,8 +86,71 @@ export class AdminUsersController {
     return this.service.list(actor, q, meta);
   }
 
+  @Get(':id')
+  @RequirePermissions(P.USERS_READ)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({
+    summary:
+      'One account (contact, status, names, admin sub-roles) – never health data; audited',
+  })
+  @ApiErrors('USER_NOT_FOUND', ...COMMON)
+  get(
+    @CurrentUser() actor: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.service.get(actor, id, meta);
+  }
+
+  @Post(':id/suspend')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(P.USERS_MANAGE)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({
+    summary:
+      'Suspend (reason required): sessions revoked, user notified, audited',
+  })
+  @ApiEnvelope(AdminUserDto)
+  @ApiErrors('USER_NOT_FOUND', 'CANNOT_MODIFY_SELF', ...COMMON)
+  suspend(
+    @CurrentUser() actor: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SuspendUserDto,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.service.updateStatus(
+      actor,
+      id,
+      { status: 'SUSPENDED', reason: dto.reason },
+      meta,
+    );
+  }
+
+  @Post(':id/reactivate')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(P.USERS_MANAGE)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Reactivate (reason required): user notified, audited',
+  })
+  @ApiEnvelope(AdminUserDto)
+  @ApiErrors('USER_NOT_FOUND', 'CANNOT_MODIFY_SELF', ...COMMON)
+  reactivate(
+    @CurrentUser() actor: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SuspendUserDto,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.service.updateStatus(
+      actor,
+      id,
+      { status: 'ACTIVE', reason: dto.reason },
+      meta,
+    );
+  }
+
   @Patch(':id/status')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions(P.USERS_MANAGE)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({
     summary: 'Activate or suspend an account',
@@ -97,7 +169,7 @@ export class AdminUsersController {
   }
 
   @Patch(':id/role')
-  @Roles('SUPER_ADMIN')
+  @RequireSuperAdmin()
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({
     summary: 'Change a user role (super admin only)',

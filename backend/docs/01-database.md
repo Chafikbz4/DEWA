@@ -27,6 +27,7 @@
 | Enum | Values |
 |---|---|
 | `account_status` | `PENDING_VERIFICATION`, `ACTIVE`, `SUSPENDED`, `DELETED` |
+| `admin_sub_role` | `VERIFICATION_ADMIN`, `SUPPORT_ADMIN`, `FINANCE_ADMIN`, `COMPLIANCE_ADMIN` |
 | `chifa_verification_status` | `NOT_VERIFIED`, `PENDING_OFFICIAL_CHECK`, `VERIFIED`, `FAILED` |
 | `commission_scope` | `GLOBAL`, `PHARMACY` |
 | `commission_type` | `PERCENT`, `FIXED`, `SUBSCRIPTION` |
@@ -75,7 +76,7 @@
 | `request_urgency` | `NORMAL`, `URGENT` |
 | `retention_job_status` | `RUNNING`, `SUCCEEDED`, `FAILED` |
 | `role` | `PATIENT`, `PHARMACY_OWNER`, `PHARMACIST`, `PHARMACY_ASSISTANT`, `DELIVERY_COMPANY_ADMIN`, `DRIVER`, `ADMIN`, `SUPER_ADMIN` |
-| `sensitive_resource_type` | `PRESCRIPTION`, `CHIFA`, `PATIENT_PROFILE` |
+| `sensitive_resource_type` | `PRESCRIPTION`, `CHIFA`, `PATIENT_PROFILE`, `CONVERSATION` |
 | `settlement_status` | `DRAFT`, `APPROVED`, `PAID` |
 | `staff_role` | `OWNER`, `PHARMACIST`, `ASSISTANT` |
 | `stock_status` | `IN_STOCK`, `LOW`, `OUT_OF_STOCK` |
@@ -985,6 +986,17 @@ erDiagram
 
 ```mermaid
 erDiagram
+  admin_role_permissions {
+    admin_sub_role admin_role
+    varchar_64_ permission
+    timestamp_with_time_zone created_at
+  }
+  admin_user_roles {
+    uuid user_id FK
+    admin_sub_role admin_role
+    uuid granted_by FK
+    timestamp_with_time_zone created_at
+  }
   audit_logs {
     uuid id PK
     uuid actor_user_id FK
@@ -1004,6 +1016,7 @@ erDiagram
     uuid sender_user_id FK
     text body
     uuid file_id FK
+    boolean is_internal
     timestamp_with_time_zone created_at
   }
   complaints {
@@ -1018,6 +1031,7 @@ erDiagram
     complaint_status status
     uuid assigned_admin_id FK
     text resolution_note
+    varchar_16_ resolution_outcome
     timestamp_with_time_zone created_at
     timestamp_with_time_zone updated_at
     timestamp_with_time_zone resolved_at
@@ -1041,12 +1055,39 @@ erDiagram
     timestamp_with_time_zone created_at
     timestamp_with_time_zone expires_at
   }
+  notification_templates {
+    varchar_64_ type
+    char_2_ lang
+    varchar_200_ title
+    varchar_1000_ body
+    uuid updated_by FK
+    timestamp_with_time_zone updated_at
+  }
+  platform_setting_changes {
+    uuid id PK
+    varchar_100_ key
+    jsonb old_value
+    jsonb new_value
+    uuid changed_by FK
+    text reason
+    timestamp_with_time_zone created_at
+  }
   platform_settings {
     varchar_100_ key PK
     jsonb value
     text description
     uuid updated_by FK
     timestamp_with_time_zone updated_at
+  }
+  sensitive_access_grants {
+    uuid id PK
+    uuid admin_user_id FK
+    varchar_16_ resource_type
+    uuid resource_id
+    text justification
+    timestamp_with_time_zone expires_at
+    timestamp_with_time_zone revoked_at
+    timestamp_with_time_zone created_at
   }
   sensitive_access_logs {
     uuid id PK
@@ -1056,6 +1097,8 @@ erDiagram
     text justification
     timestamp_with_time_zone created_at
   }
+  users ||--o{ admin_user_roles : "user_id"
+  users ||--o{ admin_user_roles : "granted_by (opt)"
   users ||--o{ audit_logs : "actor_user_id (opt)"
   complaints ||--o{ complaint_messages : "complaint_id"
   users ||--o{ complaint_messages : "sender_user_id (opt)"
@@ -1064,7 +1107,10 @@ erDiagram
   users ||--o{ complaints : "reporter_user_id"
   users ||--o{ complaints : "assigned_admin_id (opt)"
   users ||--o{ idempotency_keys : "user_id"
+  users ||--o{ notification_templates : "updated_by (opt)"
+  users ||--o{ platform_setting_changes : "changed_by (opt)"
   users ||--o{ platform_settings : "updated_by (opt)"
+  users ||--o{ sensitive_access_grants : "admin_user_id"
   users ||--o{ sensitive_access_logs : "actor_user_id"
 ```
 
@@ -2242,6 +2288,25 @@ Drivers (company or independent), availability and live position.
 
 ### 12. Support & governance
 
+#### `admin_role_permissions`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `admin_role` | admin_sub_role | no |  |  |
+| `permission` | varchar(64) | no |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+#### `admin_user_roles`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `user_id` | uuid | no |  | users.id (on delete cascade) |
+| `admin_role` | admin_sub_role | no |  |  |
+| `granted_by` | uuid | yes |  | users.id (on delete set null) |
+| `created_at` | timestamp with time zone | no | now() |  |
+
 #### `audit_logs`
 
 APPEND-ONLY audit trail (logins, admin actions, sensitive access…).
@@ -2273,6 +2338,7 @@ Messages inside a complaint.
 | `sender_user_id` | uuid | yes |  | users.id (on delete set null) |
 | `body` | text | no |  |  |
 | `file_id` | uuid | yes |  | files.id (on delete set null) |
+| `is_internal` | boolean | no | false |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 
 **Indexes:** `complaint_messages_complaint_created_idx` on (complaint_id, created_at)
@@ -2294,6 +2360,7 @@ Complaints / disputes and their resolution.
 | `status` | complaint_status | no | 'OPEN' |  |
 | `assigned_admin_id` | uuid | yes |  | users.id (on delete set null) |
 | `resolution_note` | text | yes |  |  |
+| `resolution_outcome` | varchar(16) | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 | `updated_at` | timestamp with time zone | no | now() |  |
 | `resolved_at` | timestamp with time zone | yes |  |  |
@@ -2332,6 +2399,35 @@ Runs of the data-retention purge job.
 
 **Indexes:** `idempotency_user_scope_key_uq` (unique) on (user_id, scope, key); `idempotency_expires_idx` on (expires_at)
 
+#### `notification_templates`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `type` | varchar(64) | no |  |  |
+| `lang` | char(2) | no |  |  |
+| `title` | varchar(200) | no |  |  |
+| `body` | varchar(1000) | no |  |  |
+| `updated_by` | uuid | yes |  | users.id (on delete set null) |
+| `updated_at` | timestamp with time zone | no | now() |  |
+
+**Checks:** `notification_templates_lang_chk`: `"lang" IN ('ar','fr')`
+
+#### `platform_setting_changes`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `key` | varchar(100) | no |  |  |
+| `old_value` | jsonb | yes |  |  |
+| `new_value` | jsonb | no |  |  |
+| `changed_by` | uuid | yes |  | users.id (on delete set null) |
+| `reason` | text | no |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `setting_changes_key_created_idx` on (key, created_at)
+
 #### `platform_settings`
 
 Runtime settings (key → JSON value). Seeded.
@@ -2343,6 +2439,24 @@ Runtime settings (key → JSON value). Seeded.
 | `description` | text | yes |  |  |
 | `updated_by` | uuid | yes |  | users.id (on delete set null) |
 | `updated_at` | timestamp with time zone | no | now() |  |
+
+#### `sensitive_access_grants`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `admin_user_id` | uuid | no |  | users.id (on delete restrict) |
+| `resource_type` | varchar(16) | no |  |  |
+| `resource_id` | uuid | no |  |  |
+| `justification` | text | no |  |  |
+| `expires_at` | timestamp with time zone | no |  |  |
+| `revoked_at` | timestamp with time zone | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `sensitive_grants_lookup_idx` on (admin_user_id, resource_type, resource_id, expires_at)
+
+**Checks:** `sensitive_grants_type_chk`: `"resource_type" IN ('REQUEST','CONVERSATION')`
 
 #### `sensitive_access_logs`
 

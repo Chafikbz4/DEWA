@@ -35,6 +35,7 @@ import {
   PUSH_PROVIDER,
   SMS_PROVIDER,
 } from '../messaging-providers/providers';
+import { NotificationTemplatesService } from './notification-templates.service';
 
 export type Channel = 'IN_APP' | 'PUSH' | 'SMS' | 'EMAIL';
 
@@ -60,6 +61,7 @@ export const NOTIFICATION_TYPES = {
   ACCOUNT_STATUS_CHANGED: ['IN_APP', 'EMAIL', 'SMS'],
   VERIFICATION_DECIDED: ['IN_APP', 'EMAIL', 'SMS'],
   ADMIN_ALERT: ['IN_APP'],
+  COMPLAINT_OUTCOME: ['IN_APP', 'EMAIL'],
 } as const satisfies Record<string, readonly Channel[]>;
 export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 
@@ -104,6 +106,7 @@ export class NotificationsService implements OnModuleInit {
     private readonly i18n: I18nService,
     private readonly crypto: CryptoService,
     private readonly events: EventEmitter2,
+    private readonly templates: NotificationTemplatesService,
     config: ConfigService,
   ) {
     this.retryBaseMs = Number(config.get('NOTIFICATION_RETRY_BASE_MS') ?? 2000);
@@ -208,9 +211,24 @@ export class NotificationsService implements OnModuleInit {
         ? this.i18n.t(key, lang)
         : params.status;
     }
+    // Localised label passed by key (verification decisions, account status…).
+    if (
+      typeof params.label_key === 'string' &&
+      params.status_label === undefined
+    )
+      params.status_label = this.i18n.t(params.label_key, lang);
+    const override = this.templates.get(row.type, lang);
+    const fill = (tpl: string) =>
+      tpl.replace(/\{(\w+)\}/g, (m, name: string) =>
+        params[name] !== undefined ? String(params[name]) : m,
+      );
     return {
-      title: this.i18n.t(row.titleKey, lang, params),
-      body: this.i18n.t(row.bodyKey, lang, params),
+      title: override
+        ? fill(override.title)
+        : this.i18n.t(row.titleKey, lang, params),
+      body: override
+        ? fill(override.body)
+        : this.i18n.t(row.bodyKey, lang, params),
       data: payload.data ?? {},
     };
   }

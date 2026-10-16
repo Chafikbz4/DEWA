@@ -19,6 +19,7 @@ import {
 import { AccessTokenVerifier } from './auth/access-token.verifier';
 import { UnitOfWork } from './events/unit-of-work';
 import { I18nService } from './i18n/i18n.service';
+import { PermissionsService } from './auth/permissions.guard';
 
 /** Cross-cutting services available everywhere. */
 @Global()
@@ -39,6 +40,7 @@ import { I18nService } from './i18n/i18n.service';
     I18nService,
     AuditService,
     MessageSender,
+    PermissionsService,
     // Swap these for real providers via env (SMS_PROVIDER / EMAIL_PROVIDER).
     { provide: SMS_PROVIDER, useClass: ConsoleSmsProvider },
     { provide: EMAIL_PROVIDER, useClass: ConsoleEmailProvider },
@@ -53,6 +55,7 @@ import { I18nService } from './i18n/i18n.service';
     I18nService,
     AuditService,
     MessageSender,
+    PermissionsService,
     SMS_PROVIDER,
     EMAIL_PROVIDER,
   ],

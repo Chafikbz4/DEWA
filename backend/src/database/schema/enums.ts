@@ -344,6 +344,13 @@ export const sensitiveResourceTypeEnum = pgEnum('sensitive_resource_type', [
   'PRESCRIPTION',
   'CHIFA',
   'PATIENT_PROFILE',
+  'CONVERSATION',
+]);
+export const adminSubRoleEnum = pgEnum('admin_sub_role', [
+  'VERIFICATION_ADMIN',
+  'SUPPORT_ADMIN',
+  'FINANCE_ADMIN',
+  'COMPLIANCE_ADMIN',
 ]);
 export const retentionJobStatusEnum = pgEnum('retention_job_status', [
   'RUNNING',

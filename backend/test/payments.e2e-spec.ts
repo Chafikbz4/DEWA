@@ -26,6 +26,7 @@ import {
   registerPatient,
   TestCtx,
   uploadFile,
+  grantAdminRoles,
 } from './utils';
 
 describe('Payments, refunds, receipts, settlements (e2e)', () => {
@@ -47,6 +48,7 @@ describe('Payments, refunds, receipts, settlements (e2e)', () => {
     });
     pharmacist = await addStaff(ctx, ph.pharmacyId, 'PHARMACIST');
     const admin = await insertUser(ctx, 'ADMIN');
+    await grantAdminRoles(ctx, admin.id, ['FINANCE_ADMIN']);
     adminToken = (await loginAdmin(ctx, admin.email!)).access;
   });
   afterAll(async () => {

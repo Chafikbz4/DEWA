@@ -9,7 +9,13 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { hashPassword } from '../src/common/crypto/password';
 import { Database, DRIZZLE } from '../src/database/database.module';
-import { pharmacies, Role, staffProfiles, users } from '../src/database/schema';
+import {
+  pharmacies,
+  Role,
+  staffProfiles,
+  users,
+  adminUserRoles,
+} from '../src/database/schema';
 import {
   ConsoleEmailProvider,
   ConsoleSmsProvider,
@@ -136,6 +142,18 @@ export async function insertUser(
     .insert(staffProfiles)
     .values({ userId: u.id, firstName: 'Test', lastName: role });
   return u;
+}
+
+/** Gives an ADMIN account admin sub-roles (least privilege: a bare ADMIN can do nothing). */
+export async function grantAdminRoles(
+  ctx: TestCtx,
+  userId: string,
+  roles: (typeof adminUserRoles.$inferInsert)['adminRole'][],
+) {
+  await ctx.db
+    .insert(adminUserRoles)
+    .values(roles.map((adminRole) => ({ userId, adminRole })))
+    .onConflictDoNothing();
 }
 
 /** Full admin login incl. mandatory TOTP enrolment. Returns access token + TOTP secret. */

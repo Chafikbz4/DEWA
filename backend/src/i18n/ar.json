@@ -173,7 +173,24 @@
     "DELIVERY_COMPANY_NOT_VERIFIED": "يجب التحقق من شركة التوصيل.",
     "DELIVERY_INVITATION_INVALID": "الدعوة غير صالحة أو منتهية.",
     "DELIVERY_DRIVER_BUSY": "لدى السائق توصيلة جارية.",
-    "DELIVERY_DRIVER_NOT_FOUND": "السائق غير موجود."
+    "DELIVERY_DRIVER_NOT_FOUND": "السائق غير موجود.",
+    "ADMIN_MFA_REQUIRED": "المصادقة الثنائية إلزامية للمسؤولين.",
+    "ADMIN_ROLE_TARGET_INVALID": "لا تُمنح أدوار الإدارة إلا لحساب مسؤول.",
+    "SENSITIVE_ACCESS_GRANT_REQUIRED": "الوصول إلى البيانات الحساسة: افتح أولاً وصولاً مبرراً ومحدوداً زمنياً.",
+    "VERIFICATION_INVALID_STATE": "هذا الملف ليس في انتظار التحقق.",
+    "VERIFICATION_REASON_REQUIRED": "السبب إلزامي.",
+    "COMPLAINT_ASSIGNEE_INVALID": "لا يمكن إسناد الشكوى إلا لمسؤول نشط.",
+    "COMPLAINT_OUTCOME_INVALID": "هذه النتيجة غير قابلة للتطبيق على هذه الشكوى.",
+    "DELIVERY_ZONE_EXISTS": "توجد منطقة نشطة لهذا النطاق بالفعل.",
+    "LEGAL_REVIEW_NOTE_REQUIRED": "ملاحظة المراجعة القانونية إلزامية لتفعيل هذه القاعدة.",
+    "ELIGIBILITY_LEGAL_BASIS_REQUIRED": "مرجع الأساس القانوني إلزامي لتفعيل هذه السياسة.",
+    "ELIGIBILITY_RULE_FORBIDDEN": "تتطلب هذه الفئة دائماً تحقق الصيدلي.",
+    "MEDICINE_CODE_TAKEN": "هذا الرمز التنظيمي مستعمل بالفعل.",
+    "CATALOG_IMPORT_INVALID_FILE": "ملف CSV غير صالح.",
+    "SETTING_NOT_FOUND": "إعداد غير معروف.",
+    "SETTING_VALUE_INVALID": "قيمة الإعداد غير صالحة.",
+    "NOTIFICATION_TEMPLATE_NOT_FOUND": "نموذج الإشعار غير موجود.",
+    "NOTIFICATION_TEMPLATE_INVALID": "يستخدم النموذج متغيرات غير مسموح بها."
   },
   "validation": {
     "default": "قيمة غير صالحة.",
@@ -296,6 +313,10 @@
     "COLLECTION_CODE": {
       "title": "رمز الاستلام",
       "body": "قدّم هذا الرمز للصيدلية لاستلام الطلب {reference}: {code}."
+    },
+    "COMPLAINT_OUTCOME": {
+      "title": "شكوى",
+      "body": "الشكوى {reference}: {status_label}."
     }
   },
   "system": {
@@ -381,6 +402,19 @@
       "FAILED": "فشل",
       "RETURNED": "أُعيد إلى الصيدلية",
       "CANCELLED": "ملغى"
+    },
+    "verification_decision": {
+      "APPROVED": "تمت الموافقة على الملف",
+      "REJECTED": "تم رفض الملف",
+      "DOCUMENTS_REQUESTED": "مطلوب وثائق إضافية"
+    },
+    "account_status": {
+      "ACTIVE": "نشط",
+      "SUSPENDED": "موقوف"
+    },
+    "complaint_outcome": {
+      "CLOSED": "تمت معالجتها وإغلاقها",
+      "WARNING": "تم توجيه إنذار إثر شكوى"
     }
   }
 }

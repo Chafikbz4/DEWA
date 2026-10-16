@@ -35,6 +35,7 @@ import { PatientsModule } from './modules/patients/patients.module';
 import { RequestsModule } from './modules/requests/requests.module';
 import { PharmaciesModule } from './modules/pharmacies/pharmacies.module';
 import { UsersModule } from './modules/users/users.module';
+import { PermissionsGuard } from './common/auth/permissions.guard';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { UsersModule } from './modules/users/users.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: AccountStatusGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
 export class AppModule {}

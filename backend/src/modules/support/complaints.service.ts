@@ -53,7 +53,12 @@ export class ComplaintsService {
     const msgs = await this.db
       .select()
       .from(complaintMessages)
-      .where(eq(complaintMessages.complaintId, c.id))
+      .where(
+        and(
+          eq(complaintMessages.complaintId, c.id),
+          eq(complaintMessages.isInternal, false),
+        ),
+      )
       .orderBy(asc(complaintMessages.createdAt));
     return {
       ...this.presentSummary(c),

@@ -173,7 +173,24 @@
     "DELIVERY_COMPANY_NOT_VERIFIED": "La société de livraison doit être vérifiée.",
     "DELIVERY_INVITATION_INVALID": "Invitation invalide ou expirée.",
     "DELIVERY_DRIVER_BUSY": "Le livreur a une course en cours.",
-    "DELIVERY_DRIVER_NOT_FOUND": "Livreur introuvable."
+    "DELIVERY_DRIVER_NOT_FOUND": "Livreur introuvable.",
+    "ADMIN_MFA_REQUIRED": "L'authentification à deux facteurs est obligatoire pour les administrateurs.",
+    "ADMIN_ROLE_TARGET_INVALID": "Les rôles d'administration ne s'attribuent qu'à un compte ADMIN.",
+    "SENSITIVE_ACCESS_GRANT_REQUIRED": "Accès aux données sensibles : ouvrez d'abord un accès justifié et limité dans le temps.",
+    "VERIFICATION_INVALID_STATE": "Ce dossier n'est pas en attente de vérification.",
+    "VERIFICATION_REASON_REQUIRED": "Un motif est obligatoire.",
+    "COMPLAINT_ASSIGNEE_INVALID": "La réclamation ne peut être assignée qu'à un administrateur actif.",
+    "COMPLAINT_OUTCOME_INVALID": "Cette issue n'est pas applicable à cette réclamation.",
+    "DELIVERY_ZONE_EXISTS": "Une zone active existe déjà pour ce périmètre.",
+    "LEGAL_REVIEW_NOTE_REQUIRED": "Une note de revue juridique est obligatoire pour activer cette règle.",
+    "ELIGIBILITY_LEGAL_BASIS_REQUIRED": "Une référence de base légale est obligatoire pour activer cette politique.",
+    "ELIGIBILITY_RULE_FORBIDDEN": "Cette catégorie exige toujours la validation d'un pharmacien.",
+    "MEDICINE_CODE_TAKEN": "Ce code réglementaire est déjà utilisé.",
+    "CATALOG_IMPORT_INVALID_FILE": "Fichier CSV invalide.",
+    "SETTING_NOT_FOUND": "Paramètre inconnu.",
+    "SETTING_VALUE_INVALID": "Valeur de paramètre invalide.",
+    "NOTIFICATION_TEMPLATE_NOT_FOUND": "Modèle de notification introuvable.",
+    "NOTIFICATION_TEMPLATE_INVALID": "Le modèle utilise des variables non autorisées."
   },
   "validation": {
     "default": "Valeur invalide.",
@@ -296,6 +313,10 @@
     "COLLECTION_CODE": {
       "title": "Code de retrait",
       "body": "Présentez ce code à la pharmacie pour retirer la commande {reference} : {code}."
+    },
+    "COMPLAINT_OUTCOME": {
+      "title": "Réclamation",
+      "body": "Réclamation {reference} : {status_label}."
     }
   },
   "system": {
@@ -381,6 +402,19 @@
       "FAILED": "Échec",
       "RETURNED": "Retournée à la pharmacie",
       "CANCELLED": "Annulée"
+    },
+    "verification_decision": {
+      "APPROVED": "dossier approuvé",
+      "REJECTED": "dossier refusé",
+      "DOCUMENTS_REQUESTED": "documents complémentaires demandés"
+    },
+    "account_status": {
+      "ACTIVE": "actif",
+      "SUSPENDED": "suspendu"
+    },
+    "complaint_outcome": {
+      "CLOSED": "traitée et clôturée",
+      "WARNING": "avertissement émis suite à une réclamation"
     }
   }
 }

@@ -37,7 +37,7 @@ Every payload also contains `emitted_at` (ISO datetime).
 | `request.status_changed` | patient + recipient pharmacies | `{ request_id, reference, from, to }` | `GET /requests/:id` or `GET /pharmacy/requests/:id` |
 | `order.status_changed` | patient + pharmacy | `{ order_id, reference, from, to }` | `GET /orders/:id` |
 | `delivery.status_changed` | patient + pharmacy + assigned driver | `{ delivery_id, order_id, from, to }` | `GET /orders/:id/delivery` / driver job |
-| `delivery.location` | patient (only while OUT_FOR_DELIVERY) | `{ order_id, latitude, longitude, at }` | — |
+| `delivery.location` | patient (only while OUT_FOR_DELIVERY) | `{ order_id, latitude, longitude, updated_at }` | — |
 | `notification.new` | the user | `{ notification_id, type }` | `GET /notifications` (badge) |
 | `error` | the socket | `{ code }` | — |
 

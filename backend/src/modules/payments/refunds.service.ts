@@ -201,6 +201,22 @@ export class RefundsService implements OnModuleInit {
     return this.createRequest(o, user, dto.amount_centimes, dto.reason, meta);
   }
 
+  /** Refund request opened by an admin (e.g. complaint outcome); approved separately in the refund queue. */
+  async requestByAdmin(
+    admin: AuthUser,
+    orderId: string,
+    dto: { amount_centimes?: number; reason: string },
+    meta: RequestMeta,
+  ) {
+    const [o] = await this.db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    if (!o) throw new AppException('ORDER_NOT_FOUND');
+    return this.createRequest(o, admin, dto.amount_centimes, dto.reason, meta);
+  }
+
   async listForOrder(user: AuthUser, orderId: string) {
     const [o] = await this.db
       .select({ patient: orders.patientUserId })

@@ -102,6 +102,11 @@ export const SETTING_DEFAULTS = {
     value: [] as string[],
     description: 'Words rejected in chat messages (case-insensitive).',
   },
+  sensitive_access_grant_minutes: {
+    value: 30,
+    description:
+      'Validity of an admin sensitive-access grant (prescription / Chifa / conversation content), in minutes.',
+  },
   settlement_period_days: {
     value: 7,
     description: 'Length of a settlement period, in days.',

@@ -18,6 +18,7 @@ import {
   setPharmacyStatus,
   TestCtx,
   uniquePhone,
+  grantAdminRoles,
 } from './utils';
 
 describe('RBAC, account status & admin (e2e)', () => {
@@ -263,6 +264,7 @@ describe('RBAC, account status & admin (e2e)', () => {
   describe('admins', () => {
     it('never issues tokens to an admin before TOTP enrolment, then requires TOTP at every login', async () => {
       const admin = await insertUser(ctx, 'ADMIN');
+      await grantAdminRoles(ctx, admin.id, ['SUPPORT_ADMIN']);
       const first = await ctx
         .http()
         .post('/auth/login')
@@ -319,6 +321,7 @@ describe('RBAC, account status & admin (e2e)', () => {
 
     it('lists users with pagination + filters and audits the access', async () => {
       const admin = await insertUser(ctx, 'ADMIN');
+      await grantAdminRoles(ctx, admin.id, ['SUPPORT_ADMIN']);
       const { access } = await loginAdmin(ctx, admin.email!);
       const res = await ctx
         .http()
@@ -347,6 +350,7 @@ describe('RBAC, account status & admin (e2e)', () => {
 
     it('suspends a user (reason required, sessions revoked, audited) – role changes are super-admin only', async () => {
       const admin = await insertUser(ctx, 'ADMIN');
+      await grantAdminRoles(ctx, admin.id, ['SUPPORT_ADMIN']);
       const { access } = await loginAdmin(ctx, admin.email!);
       const patient = await registerPatient(ctx);
 

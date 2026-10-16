@@ -4,7 +4,8 @@ import { Database, DbOrTx, DRIZZLE } from '../../database/database.module';
 import { sensitiveAccessLogs } from '../../database/schema';
 import { AuditService } from './audit.service';
 
-export type SensitiveResource = 'PRESCRIPTION' | 'CHIFA' | 'PATIENT_PROFILE';
+export type SensitiveResource =
+  'PRESCRIPTION' | 'CHIFA' | 'PATIENT_PROFILE' | 'CONVERSATION';
 
 /**
  * Every read of prescription / CHIFA / patient-profile content is recorded in

@@ -64,6 +64,8 @@ import {
 import { ReceiptsService } from './receipts.service';
 import { RefundsService } from './refunds.service';
 import { SettlementsService } from './settlements.service';
+import { PERMISSIONS as P } from '../../common/auth/permissions';
+import { RequirePermissions } from '../../common/auth/permissions.guard';
 
 class RefundRequestDto {
   @ApiPropertyOptional({
@@ -464,7 +466,6 @@ export class PaymentCallbacksController {
 
 @ApiTags('Admin – payments')
 @ApiBearerAuth()
-@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('admin')
 export class AdminPaymentsController {
   constructor(
@@ -474,24 +475,27 @@ export class AdminPaymentsController {
   ) {}
 
   @Get('payments/reconciliation')
+  @RequirePermissions(P.PAYMENTS_READ)
   @ApiOperation({
     summary:
       'Reconciliation issues (amount mismatch, duplicates, stale, missing, orphan events)',
   })
-  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED', 'ADMIN_MFA_REQUIRED')
   issues(@Query() q: IssuesQueryDto) {
     return this.payments.listIssues(q);
   }
 
   @Post('payments/reconciliation/run')
+  @RequirePermissions(P.PAYMENTS_READ)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Run reconciliation now' })
-  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED', 'ADMIN_MFA_REQUIRED')
   run() {
     return this.payments.reconcile();
   }
 
   @Post('payments/reconciliation/:id/resolve')
+  @RequirePermissions(P.REFUNDS_DECIDE)
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({ summary: 'Resolve an issue (note required, audited)' })
@@ -510,16 +514,18 @@ export class AdminPaymentsController {
   }
 
   @Get('refunds')
+  @RequirePermissions(P.PAYMENTS_READ)
   @ApiOperation({
     summary: 'Refund queue',
     description: 'Filter status (comma list).',
   })
-  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED', 'ADMIN_MFA_REQUIRED')
   refundQueue(@Query() q: RefundQueueDto) {
     return this.refunds.queue(q);
   }
 
   @Post('refunds/:id/approve')
+  @RequirePermissions(P.REFUNDS_DECIDE)
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({ summary: 'Approve and execute a refund with the provider' })
@@ -538,10 +544,16 @@ export class AdminPaymentsController {
   }
 
   @Post('refunds/:id/reject')
+  @RequirePermissions(P.REFUNDS_DECIDE)
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({ summary: 'Reject a refund (reason required)' })
-  @ApiErrors('REFUND_NOT_ALLOWED', 'ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors(
+    'REFUND_NOT_ALLOWED',
+    'ROLE_FORBIDDEN',
+    'PERMISSION_DENIED',
+    'ADMIN_MFA_REQUIRED',
+  )
   reject(
     @CurrentUser() admin: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -552,19 +564,21 @@ export class AdminPaymentsController {
   }
 
   @Get('settlements')
+  @RequirePermissions(P.PAYMENTS_READ)
   @ApiOperation({
     summary:
       'Settlement records (records only unless payouts are legally allowed)',
   })
-  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED', 'ADMIN_MFA_REQUIRED')
   settlementsList(@Query() q: SettlementsQueryDto) {
     return this.settlements.list(q);
   }
 
   @Post('settlements/generate')
+  @RequirePermissions(P.SETTLEMENTS_MANAGE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate settlements for a period (idempotent)' })
-  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors('ROLE_FORBIDDEN', 'PERMISSION_DENIED', 'ADMIN_MFA_REQUIRED')
   generate(@Body() dto: GenerateSettlementsDto) {
     return this.settlements.generate(
       new Date(`${dto.period_start}T00:00:00Z`),
@@ -573,10 +587,16 @@ export class AdminPaymentsController {
   }
 
   @Post('settlements/:id/approve')
+  @RequirePermissions(P.SETTLEMENTS_MANAGE)
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({ summary: 'Approve a DRAFT settlement' })
-  @ApiErrors('SETTLEMENT_INVALID_STATE', 'ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors(
+    'SETTLEMENT_INVALID_STATE',
+    'ROLE_FORBIDDEN',
+    'PERMISSION_DENIED',
+    'ADMIN_MFA_REQUIRED',
+  )
   approveSettlement(
     @CurrentUser() admin: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -586,12 +606,18 @@ export class AdminPaymentsController {
   }
 
   @Post('settlements/:id/mark-paid')
+  @RequirePermissions(P.SETTLEMENTS_MANAGE)
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({
     summary: 'Record an off-platform payout for an APPROVED settlement',
   })
-  @ApiErrors('SETTLEMENT_INVALID_STATE', 'ROLE_FORBIDDEN', 'PERMISSION_DENIED')
+  @ApiErrors(
+    'SETTLEMENT_INVALID_STATE',
+    'ROLE_FORBIDDEN',
+    'PERMISSION_DENIED',
+    'ADMIN_MFA_REQUIRED',
+  )
   markPaid(
     @CurrentUser() admin: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,

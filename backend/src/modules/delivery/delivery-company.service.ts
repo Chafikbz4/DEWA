@@ -155,7 +155,7 @@ export class DeliveryCompanyService {
     if (q.available !== undefined)
       conditions.push(eq(drivers.isAvailable, q.available));
     const where = and(...conditions);
-    const activeJobs = sql<number>`(SELECT count(*)::int FROM deliveries x WHERE x.driver_id = ${drivers.id} AND x.status IN ('ASSIGNED','PICKED_UP','OUT_FOR_DELIVERY'))`;
+    const activeJobs = sql<number>`(SELECT count(*)::int FROM deliveries x WHERE x.driver_id = "drivers"."id" AND x.status IN ('ASSIGNED','PICKED_UP','OUT_FOR_DELIVERY'))`;
     const [rows, [{ total }]] = await Promise.all([
       this.db
         .select({ d: drivers, activeJobs })

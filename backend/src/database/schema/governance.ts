@@ -1,9 +1,14 @@
+import { sql } from 'drizzle-orm';
 import {
+  boolean,
+  check,
+  char,
   index,
   integer,
   jsonb,
   pgSequence,
   pgTable,
+  primaryKey,
   text,
   uniqueIndex,
   uuid,
@@ -11,6 +16,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createdAt, pk, tstz, updatedAt } from './_columns';
 import {
+  adminSubRoleEnum,
   complaintAgainstTypeEnum,
   complaintStatusEnum,
   retentionJobStatusEnum,
@@ -47,6 +53,8 @@ export const complaints = pgTable(
       onDelete: 'set null',
     }),
     resolutionNote: text('resolution_note'),
+    /** NONE | REFUND | WARNING | SUSPENSION */
+    resolutionOutcome: varchar('resolution_outcome', { length: 16 }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     resolvedAt: tstz('resolved_at'),
@@ -74,6 +82,8 @@ export const complaintMessages = pgTable(
     fileId: uuid('file_id').references(() => files.id, {
       onDelete: 'set null',
     }),
+    /** Admin-only note, never shown to the parties. */
+    isInternal: boolean('is_internal').notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
@@ -173,5 +183,100 @@ export const idempotencyKeys = pgTable(
   (t) => [
     uniqueIndex('idempotency_user_scope_key_uq').on(t.userId, t.scope, t.key),
     index('idempotency_expires_idx').on(t.expiresAt),
+  ],
+);
+
+// ---------- Admin least privilege ----------
+
+/** Permissions of each admin sub-role (seeded with the defaults, editable by SUPER_ADMIN). */
+export const adminRolePermissions = pgTable(
+  'admin_role_permissions',
+  {
+    adminRole: adminSubRoleEnum('admin_role').notNull(),
+    permission: varchar('permission', { length: 64 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.adminRole, t.permission] })],
+);
+
+/** Sub-roles held by ADMIN accounts. */
+export const adminUserRoles = pgTable(
+  'admin_user_roles',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    adminRole: adminSubRoleEnum('admin_role').notNull(),
+    grantedBy: uuid('granted_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.adminRole] })],
+);
+
+/** Time-limited, justified admin access to sensitive content (break-glass). */
+export const sensitiveAccessGrants = pgTable(
+  'sensitive_access_grants',
+  {
+    id: pk(),
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    /** REQUEST | CONVERSATION */
+    resourceType: varchar('resource_type', { length: 16 }).notNull(),
+    resourceId: uuid('resource_id').notNull(),
+    justification: text('justification').notNull(),
+    expiresAt: tstz('expires_at').notNull(),
+    revokedAt: tstz('revoked_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'sensitive_grants_type_chk',
+      sql`${t.resourceType} IN ('REQUEST','CONVERSATION')`,
+    ),
+    index('sensitive_grants_lookup_idx').on(
+      t.adminUserId,
+      t.resourceType,
+      t.resourceId,
+      t.expiresAt,
+    ),
+  ],
+);
+
+/** APPEND-ONLY history of platform setting changes. */
+export const platformSettingChanges = pgTable(
+  'platform_setting_changes',
+  {
+    id: pk(),
+    key: varchar('key', { length: 100 }).notNull(),
+    oldValue: jsonb('old_value'),
+    newValue: jsonb('new_value').notNull(),
+    changedBy: uuid('changed_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    reason: text('reason').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('setting_changes_key_created_idx').on(t.key, t.createdAt)],
+);
+
+/** Admin overrides of notification texts (fallback: i18n defaults). */
+export const notificationTemplates = pgTable(
+  'notification_templates',
+  {
+    type: varchar('type', { length: 64 }).notNull(),
+    lang: char('lang', { length: 2 }).notNull(),
+    title: varchar('title', { length: 200 }).notNull(),
+    body: varchar('body', { length: 1000 }).notNull(),
+    updatedBy: uuid('updated_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.type, t.lang] }),
+    check('notification_templates_lang_chk', sql`${t.lang} IN ('ar','fr')`),
   ],
 );

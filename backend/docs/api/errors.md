@@ -181,3 +181,20 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `DELIVERY_INVITATION_INVALID` | 400 | Invitation invalide ou expirée. | الدعوة غير صالحة أو منتهية. |
 | `DELIVERY_DRIVER_BUSY` | 409 | Le livreur a une course en cours. | لدى السائق توصيلة جارية. |
 | `DELIVERY_DRIVER_NOT_FOUND` | 404 | Livreur introuvable. | السائق غير موجود. |
+| `ADMIN_MFA_REQUIRED` | 403 | L'authentification à deux facteurs est obligatoire pour les administrateurs. | المصادقة الثنائية إلزامية للمسؤولين. |
+| `ADMIN_ROLE_TARGET_INVALID` | 400 | Les rôles d'administration ne s'attribuent qu'à un compte ADMIN. | لا تُمنح أدوار الإدارة إلا لحساب مسؤول. |
+| `SENSITIVE_ACCESS_GRANT_REQUIRED` | 403 | Accès aux données sensibles : ouvrez d'abord un accès justifié et limité dans le temps. | الوصول إلى البيانات الحساسة: افتح أولاً وصولاً مبرراً ومحدوداً زمنياً. |
+| `VERIFICATION_INVALID_STATE` | 409 | Ce dossier n'est pas en attente de vérification. | هذا الملف ليس في انتظار التحقق. |
+| `VERIFICATION_REASON_REQUIRED` | 400 | Un motif est obligatoire. | السبب إلزامي. |
+| `COMPLAINT_ASSIGNEE_INVALID` | 400 | La réclamation ne peut être assignée qu'à un administrateur actif. | لا يمكن إسناد الشكوى إلا لمسؤول نشط. |
+| `COMPLAINT_OUTCOME_INVALID` | 400 | Cette issue n'est pas applicable à cette réclamation. | هذه النتيجة غير قابلة للتطبيق على هذه الشكوى. |
+| `DELIVERY_ZONE_EXISTS` | 409 | Une zone active existe déjà pour ce périmètre. | توجد منطقة نشطة لهذا النطاق بالفعل. |
+| `LEGAL_REVIEW_NOTE_REQUIRED` | 400 | Une note de revue juridique est obligatoire pour activer cette règle. | ملاحظة المراجعة القانونية إلزامية لتفعيل هذه القاعدة. |
+| `ELIGIBILITY_LEGAL_BASIS_REQUIRED` | 400 | Une référence de base légale est obligatoire pour activer cette politique. | مرجع الأساس القانوني إلزامي لتفعيل هذه السياسة. |
+| `ELIGIBILITY_RULE_FORBIDDEN` | 400 | Cette catégorie exige toujours la validation d'un pharmacien. | تتطلب هذه الفئة دائماً تحقق الصيدلي. |
+| `MEDICINE_CODE_TAKEN` | 409 | Ce code réglementaire est déjà utilisé. | هذا الرمز التنظيمي مستعمل بالفعل. |
+| `CATALOG_IMPORT_INVALID_FILE` | 400 | Fichier CSV invalide. | ملف CSV غير صالح. |
+| `SETTING_NOT_FOUND` | 404 | Paramètre inconnu. | إعداد غير معروف. |
+| `SETTING_VALUE_INVALID` | 400 | Valeur de paramètre invalide. | قيمة الإعداد غير صالحة. |
+| `NOTIFICATION_TEMPLATE_NOT_FOUND` | 404 | Modèle de notification introuvable. | نموذج الإشعار غير موجود. |
+| `NOTIFICATION_TEMPLATE_INVALID` | 400 | Le modèle utilise des variables non autorisées. | يستخدم النموذج متغيرات غير مسموح بها. |

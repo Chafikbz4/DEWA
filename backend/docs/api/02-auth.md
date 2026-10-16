@@ -471,6 +471,8 @@ Revokes a pending invitation → `InvitationDto`. Not pending → `INVITATION_IN
 
 Bearer; admins always have MFA. Every call is audited (with the `reason` when required).
 
+> Since Phase 9, admin endpoints use **permissions** (admin sub-roles), not just the `ADMIN` role: `users.read` for listing and viewing, `users.manage` for status changes, SUPER_ADMIN for creating admins and changing roles. See [09-admin.md](./09-admin.md), which also documents `GET /admin/users/:id` and `POST /admin/users/:id/suspend` / `reactivate`.
+
 ### POST /admin/users — SUPER_ADMIN
 
 | Field | Type | Required | Validation |
@@ -484,12 +486,12 @@ Bearer; admins always have MFA. Every call is audited (with the `reason` when re
 
 `201` → `AdminUserDto`. The new `ADMIN` is `PENDING_VERIFICATION` and becomes `ACTIVE` after enrolling TOTP at first login. Errors: `IDENTIFIER_ALREADY_USED`.
 
-### GET /admin/users — ADMIN, SUPER_ADMIN
+### GET /admin/users — permission `users.read`
 
 Query: `page`, `limit`, `order`, `sort` = `created_at` | `last_login_at`, `role`, `status`, `search` (email/phone prefix, 2–100 chars).
 Item `AdminUserDto`: `{ id, role, status, email, phone, email_verified, phone_verified, mfa_enabled, last_login_at, created_at }`.
 
-### PATCH /admin/users/:id/status — ADMIN, SUPER_ADMIN
+### PATCH /admin/users/:id/status — permission `users.manage`
 
 `{ "status": "ACTIVE" | "SUSPENDED", "reason": "…" }`. Suspension revokes all sessions immediately.
 Rules: nobody can modify themselves (`CANNOT_MODIFY_SELF`) or a `SUPER_ADMIN`; `ADMIN` cannot modify another `ADMIN` (`ROLE_FORBIDDEN`).
