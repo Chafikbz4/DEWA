@@ -26,6 +26,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { OffersModule } from './modules/offers/offers.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { SupportModule } from './modules/support/support.module';
 import { GeoModule } from './modules/geo/geo.module';
@@ -82,6 +83,7 @@ import { UsersModule } from './modules/users/users.module';
     OffersModule,
     OrdersModule,
     PaymentsModule,
+    DeliveryModule,
     SupportModule,
     PatientsModule,
     RequestsModule,

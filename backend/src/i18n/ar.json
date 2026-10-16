@@ -156,7 +156,24 @@
     "RECEIPT_NOT_FOUND": "الإيصال غير موجود.",
     "SETTLEMENT_INVALID_STATE": "لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للتسوية.",
     "RECONCILIATION_ISSUE_NOT_FOUND": "مشكلة المطابقة غير موجودة أو تم حلها.",
-    "PERMISSION_DENIED": "ليست لديك صلاحية تنفيذ هذا الإجراء."
+    "PERMISSION_DENIED": "ليست لديك صلاحية تنفيذ هذا الإجراء.",
+    "DELIVERY_NOT_FOUND": "التوصيل غير موجود.",
+    "DELIVERY_ALREADY_TAKEN": "تم أخذ هذه التوصيلة من طرف سائق آخر.",
+    "DELIVERY_INVALID_TRANSITION": "لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للتوصيل.",
+    "DELIVERY_VERSION_CONFLICT": "تم تعديل التوصيل في الأثناء. أعد التحميل وحاول مجددًا.",
+    "DELIVERY_RELEASE_LIMIT_REACHED": "لقد بلغت الحد الأقصى للتوصيلات المُعادة اليوم.",
+    "DELIVERY_CODE_INVALID": "الرمز غير صحيح.",
+    "DELIVERY_CODE_LOCKED": "محاولات كثيرة: يجب إنشاء رمز جديد.",
+    "DELIVERY_PROOF_REQUIRED": "يلزم دليل تسليم واحد صالح (رمز أو توقيع أو صورة بدون وجه).",
+    "DELIVERY_LOCATION_THROTTLED": "تحديث الموقع متكرر جدًا.",
+    "DRIVER_PROFILE_NOT_FOUND": "ملف السائق غير موجود.",
+    "DRIVER_NOT_VERIFIED": "يجب التحقق من حساب السائق للوصول إلى التوصيلات.",
+    "DRIVER_NOT_AVAILABLE": "قم بتفعيل التوفر لقبول توصيلة.",
+    "DELIVERY_COMPANY_NOT_FOUND": "شركة التوصيل غير موجودة.",
+    "DELIVERY_COMPANY_NOT_VERIFIED": "يجب التحقق من شركة التوصيل.",
+    "DELIVERY_INVITATION_INVALID": "الدعوة غير صالحة أو منتهية.",
+    "DELIVERY_DRIVER_BUSY": "لدى السائق توصيلة جارية.",
+    "DELIVERY_DRIVER_NOT_FOUND": "السائق غير موجود."
   },
   "validation": {
     "default": "قيمة غير صالحة.",
@@ -196,7 +213,8 @@
   "messages": {
     "otp": "DEWA: رمز التحقق الخاص بك هو {code}. تنتهي صلاحيته خلال {minutes} دقائق. لا تشاركه مع أي شخص.",
     "account_exists": "DEWA: تمت محاولة التسجيل باستخدام بياناتك. لديك حساب بالفعل: سجّل الدخول أو أعد تعيين كلمة المرور.",
-    "staff_invitation": "DEWA: تمت دعوتك للانضمام إلى صيدلية {pharmacy} بصفة {role}. رمز الدعوة: {token} (صالح لمدة {days} أيام)."
+    "staff_invitation": "DEWA: تمت دعوتك للانضمام إلى صيدلية {pharmacy} بصفة {role}. رمز الدعوة: {token} (صالح لمدة {days} أيام).",
+    "driver_invitation": "DEWA: تدعوك شركة التوصيل {company} للانضمام إلى فريق السائقين. رمز الدعوة: {token} (صالح لمدة {days} أيام)."
   },
   "notifications": {
     "REQUEST_RECEIVED": {

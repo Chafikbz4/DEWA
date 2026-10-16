@@ -50,6 +50,7 @@ export const filePurposeEnum = pgEnum('file_purpose', [
   'CHIFA_CARD',
   'PHARMACY_DOC',
   'DRIVER_DOC',
+  'DELIVERY_COMPANY_DOC',
   'MESSAGE_ATTACHMENT',
   'PROOF_OF_DELIVERY',
   'DEPENDANT_PROOF',
@@ -295,6 +296,13 @@ export const driverStatusEnum = pgEnum('driver_status', [
   'PENDING_VERIFICATION',
   'VERIFIED',
   'SUSPENDED',
+]);
+export const driverDocTypeEnum = pgEnum('driver_doc_type', [
+  'ID_CARD',
+  'DRIVING_LICENSE',
+  'VEHICLE_REGISTRATION',
+  'INSURANCE',
+  'OTHER',
 ]);
 export const vehicleTypeEnum = pgEnum('vehicle_type', [
   'MOTORCYCLE',

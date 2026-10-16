@@ -19,7 +19,9 @@ import {
   deliveryCompanyStatusEnum,
   deliveryStatusEnum,
   documentReviewStatusEnum,
+  driverDocTypeEnum,
   driverStatusEnum,
+  invitationStatusEnum,
   proofTypeEnum,
   roleEnum,
   vehicleTypeEnum,
@@ -128,6 +130,65 @@ export const drivers = pgTable(
   ],
 );
 
+export const driverDocuments = pgTable(
+  'driver_documents',
+  {
+    id: pk(),
+    driverId: uuid('driver_id')
+      .notNull()
+      .references(() => drivers.id, { onDelete: 'cascade' }),
+    docType: driverDocTypeEnum('doc_type').notNull(),
+    fileId: uuid('file_id')
+      .notNull()
+      .references(() => files.id, { onDelete: 'restrict' }),
+    reviewStatus: documentReviewStatusEnum('review_status')
+      .notNull()
+      .default('PENDING'),
+    reviewerAdminId: uuid('reviewer_admin_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    reviewNote: text('review_note'),
+    reviewedAt: tstz('reviewed_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('driver_documents_driver_idx').on(t.driverId),
+    index('driver_documents_review_idx').on(t.reviewStatus, t.createdAt),
+  ],
+);
+
+/** A company admin invites a driver (token sent by SMS / email, stored as HMAC). */
+export const deliveryDriverInvitations = pgTable(
+  'delivery_driver_invitations',
+  {
+    id: pk(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => deliveryCompanies.id, { onDelete: 'cascade' }),
+    email: varchar('email', { length: 254 }),
+    phone: varchar('phone', { length: 16 }),
+    tokenHash: text('token_hash').notNull(),
+    status: invitationStatusEnum('status').notNull().default('PENDING'),
+    invitedBy: uuid('invited_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    expiresAt: tstz('expires_at').notNull(),
+    acceptedByUserId: uuid('accepted_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    acceptedAt: tstz('accepted_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'driver_invitations_target_chk',
+      sql`${t.email} IS NOT NULL OR ${t.phone} IS NOT NULL`,
+    ),
+    uniqueIndex('driver_invitations_token_hash_uq').on(t.tokenHash),
+    index('driver_invitations_company_status_idx').on(t.companyId, t.status),
+  ],
+);
+
 export const deliveryZones = pgTable(
   'delivery_zones',
   {
@@ -205,13 +266,21 @@ export const deliveries = pgTable(
     deliveryFeeCentimes: money('delivery_fee_centimes').notNull().default(0),
     driverPayoutCentimes: money('driver_payout_centimes').notNull().default(0),
     pickupCodeHash: text('pickup_code_hash'),
+    pickupCodeAttempts: smallint('pickup_code_attempts').notNull().default(0),
     /** OTP the patient gives the driver at hand-over. */
     deliveryCodeHash: text('delivery_code_hash'),
+    deliveryCodeAttempts: smallint('delivery_code_attempts')
+      .notNull()
+      .default(0),
+    /** Attempts reported by the driver when the delivery failed. */
+    deliveryAttempts: smallint('delivery_attempts').notNull().default(0),
     assignedAt: tstz('assigned_at'),
     pickedUpAt: tstz('picked_up_at'),
     deliveredAt: tstz('delivered_at'),
     estimatedArrivalAt: tstz('estimated_arrival_at'),
     failureReason: text('failure_reason'),
+    /** Driver says the parcel is back; the pharmacy confirms with return_confirmed_at. */
+    returnedByDriverAt: tstz('returned_by_driver_at'),
     returnConfirmedAt: tstz('return_confirmed_at'),
     proofType: proofTypeEnum('proof_type'),
     proofFileId: uuid('proof_file_id').references(() => files.id, {
@@ -228,6 +297,10 @@ export const deliveries = pgTable(
       sql`${t.deliveryFeeCentimes} >= 0 AND ${t.driverPayoutCentimes} >= 0`,
     ),
     check('deliveries_version_chk', sql`${t.version} >= 1`),
+    check(
+      'deliveries_attempts_chk',
+      sql`${t.pickupCodeAttempts} >= 0 AND ${t.deliveryCodeAttempts} >= 0 AND ${t.deliveryAttempts} >= 0`,
+    ),
     index('deliveries_status_created_idx').on(t.status, t.createdAt),
     index('deliveries_driver_status_idx').on(t.driverId, t.status),
     index('deliveries_company_status_idx').on(t.companyId, t.status),

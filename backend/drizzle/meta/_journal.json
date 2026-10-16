@@ -78,6 +78,13 @@
       "when": 1792157546547,
       "tag": "0010_payments_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792159914535,
+      "tag": "0011_delivery_execution",
+      "breakpoints": true
     }
   ]
 }

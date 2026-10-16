@@ -40,8 +40,9 @@
 | `dependant_authorization_status` | `DECLARED`, `VERIFIED`, `REJECTED` |
 | `device_platform` | `ios`, `android`, `web` |
 | `document_review_status` | `PENDING`, `APPROVED`, `REJECTED` |
+| `driver_doc_type` | `ID_CARD`, `DRIVING_LICENSE`, `VEHICLE_REGISTRATION`, `INSURANCE`, `OTHER` |
 | `driver_status` | `PENDING_VERIFICATION`, `VERIFIED`, `SUSPENDED` |
-| `file_purpose` | `PRESCRIPTION`, `CHIFA_CARD`, `PHARMACY_DOC`, `DRIVER_DOC`, `MESSAGE_ATTACHMENT`, `PROOF_OF_DELIVERY`, `DEPENDANT_PROOF` |
+| `file_purpose` | `PRESCRIPTION`, `CHIFA_CARD`, `PHARMACY_DOC`, `DRIVER_DOC`, `DELIVERY_COMPANY_DOC`, `MESSAGE_ATTACHMENT`, `PROOF_OF_DELIVERY`, `DEPENDANT_PROOF` |
 | `file_quality_status` | `UNCHECKED`, `READABLE`, `UNREADABLE` |
 | `fulfillment_type` | `DELIVERY`, `PICKUP` |
 | `gender` | `MALE`, `FEMALE` |
@@ -843,12 +844,16 @@ erDiagram
     bigint delivery_fee_centimes
     bigint driver_payout_centimes
     text pickup_code_hash
+    smallint pickup_code_attempts
     text delivery_code_hash
+    smallint delivery_code_attempts
+    smallint delivery_attempts
     timestamp_with_time_zone assigned_at
     timestamp_with_time_zone picked_up_at
     timestamp_with_time_zone delivered_at
     timestamp_with_time_zone estimated_arrival_at
     text failure_reason
+    timestamp_with_time_zone returned_by_driver_at
     timestamp_with_time_zone return_confirmed_at
     proof_type proof_type
     uuid proof_file_id FK
@@ -882,6 +887,19 @@ erDiagram
     timestamp_with_time_zone reviewed_at
     timestamp_with_time_zone created_at
   }
+  delivery_driver_invitations {
+    uuid id PK
+    uuid company_id FK
+    varchar_254_ email
+    varchar_16_ phone
+    text token_hash
+    invitation_status status
+    uuid invited_by FK
+    timestamp_with_time_zone expires_at
+    uuid accepted_by_user_id FK
+    timestamp_with_time_zone accepted_at
+    timestamp_with_time_zone created_at
+  }
   delivery_fee_rules {
     uuid id PK
     uuid zone_id FK
@@ -911,6 +929,17 @@ erDiagram
     boolean is_active
     timestamp_with_time_zone created_at
   }
+  driver_documents {
+    uuid id PK
+    uuid driver_id FK
+    driver_doc_type doc_type
+    uuid file_id FK
+    document_review_status review_status
+    uuid reviewer_admin_id FK
+    text review_note
+    timestamp_with_time_zone reviewed_at
+    timestamp_with_time_zone created_at
+  }
   drivers {
     uuid id PK
     uuid user_id FK
@@ -937,11 +966,17 @@ erDiagram
   delivery_companies ||--o{ delivery_company_documents : "company_id"
   files ||--o{ delivery_company_documents : "file_id"
   users ||--o{ delivery_company_documents : "reviewer_admin_id (opt)"
+  delivery_companies ||--o{ delivery_driver_invitations : "company_id"
+  users ||--o{ delivery_driver_invitations : "invited_by (opt)"
+  users ||--o{ delivery_driver_invitations : "accepted_by_user_id (opt)"
   delivery_zones ||--o{ delivery_fee_rules : "zone_id"
   deliveries ||--o{ delivery_status_history : "delivery_id"
   users ||--o{ delivery_status_history : "actor_user_id (opt)"
   wilayas ||--o{ delivery_zones : "wilaya_id"
   communes ||--o{ delivery_zones : "commune_id (opt)"
+  drivers ||--o{ driver_documents : "driver_id"
+  files ||--o{ driver_documents : "file_id"
+  users ||--o{ driver_documents : "reviewer_admin_id (opt)"
   users ||--o{ drivers : "user_id"
   delivery_companies ||--o{ drivers : "company_id (opt)"
 ```
@@ -2030,12 +2065,16 @@ Delivery of an order. Snapshots contain NO medical data; package label is opaque
 | `delivery_fee_centimes` | bigint | no | 0 |  |
 | `driver_payout_centimes` | bigint | no | 0 |  |
 | `pickup_code_hash` | text | yes |  |  |
+| `pickup_code_attempts` | smallint | no | 0 |  |
 | `delivery_code_hash` | text | yes |  |  |
+| `delivery_code_attempts` | smallint | no | 0 |  |
+| `delivery_attempts` | smallint | no | 0 |  |
 | `assigned_at` | timestamp with time zone | yes |  |  |
 | `picked_up_at` | timestamp with time zone | yes |  |  |
 | `delivered_at` | timestamp with time zone | yes |  |  |
 | `estimated_arrival_at` | timestamp with time zone | yes |  |  |
 | `failure_reason` | text | yes |  |  |
+| `returned_by_driver_at` | timestamp with time zone | yes |  |  |
 | `return_confirmed_at` | timestamp with time zone | yes |  |  |
 | `proof_type` | proof_type | yes |  |  |
 | `proof_file_id` | uuid | yes |  | files.id (on delete set null) |
@@ -2045,7 +2084,7 @@ Delivery of an order. Snapshots contain NO medical data; package label is opaque
 
 **Indexes:** `deliveries_order_uq` (unique) on (order_id); `deliveries_status_created_idx` on (status, created_at); `deliveries_driver_status_idx` on (driver_id, status); `deliveries_company_status_idx` on (company_id, status)
 
-**Checks:** `deliveries_money_chk`: `"delivery_fee_centimes" >= 0 AND "driver_payout_centimes" >= 0`; `deliveries_version_chk`: `"version" >= 1`
+**Checks:** `deliveries_money_chk`: `"delivery_fee_centimes" >= 0 AND "driver_payout_centimes" >= 0`; `deliveries_version_chk`: `"version" >= 1`; `deliveries_attempts_chk`: `"pickup_code_attempts" >= 0 AND "delivery_code_attempts" >= 0 AND "delivery_attempts" >= 0`
 
 #### `delivery_companies`
 
@@ -2086,6 +2125,27 @@ Documents submitted by delivery companies.
 | `created_at` | timestamp with time zone | no | now() |  |
 
 **Indexes:** `delivery_company_documents_company_idx` on (company_id); `delivery_company_documents_review_idx` on (review_status, created_at)
+
+#### `delivery_driver_invitations`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `company_id` | uuid | no |  | delivery_companies.id (on delete cascade) |
+| `email` | varchar(254) | yes |  |  |
+| `phone` | varchar(16) | yes |  |  |
+| `token_hash` | text | no |  |  |
+| `status` | invitation_status | no | 'PENDING' |  |
+| `invited_by` | uuid | yes |  | users.id (on delete set null) |
+| `expires_at` | timestamp with time zone | no |  |  |
+| `accepted_by_user_id` | uuid | yes |  | users.id (on delete set null) |
+| `accepted_at` | timestamp with time zone | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `driver_invitations_token_hash_uq` (unique) on (token_hash); `driver_invitations_company_status_idx` on (company_id, status)
+
+**Checks:** `driver_invitations_target_chk`: `"email" IS NOT NULL OR "phone" IS NOT NULL`
 
 #### `delivery_fee_rules`
 
@@ -2138,6 +2198,23 @@ Areas where delivery is offered.
 | `created_at` | timestamp with time zone | no | now() |  |
 
 **Indexes:** `delivery_zones_wilaya_commune_idx` on (wilaya_id, commune_id)
+
+#### `driver_documents`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `driver_id` | uuid | no |  | drivers.id (on delete cascade) |
+| `doc_type` | driver_doc_type | no |  |  |
+| `file_id` | uuid | no |  | files.id (on delete restrict) |
+| `review_status` | document_review_status | no | 'PENDING' |  |
+| `reviewer_admin_id` | uuid | yes |  | users.id (on delete set null) |
+| `review_note` | text | yes |  |  |
+| `reviewed_at` | timestamp with time zone | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `driver_documents_driver_idx` on (driver_id); `driver_documents_review_idx` on (review_status, created_at)
 
 #### `drivers`
 

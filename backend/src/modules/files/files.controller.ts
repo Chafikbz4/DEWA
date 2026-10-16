@@ -145,7 +145,7 @@ export class FilesController {
       'not the extension. Max FILE_MAX_SIZE_MB (10) per file, FILE_MAX_FILES (5) per call. Files are malware-scanned and ' +
       'encrypted at rest. A single invalid file rejects the whole batch. Purposes per role: PATIENT → PRESCRIPTION, CHIFA_CARD, ' +
       'MESSAGE_ATTACHMENT, DEPENDANT_PROOF; PHARMACY_OWNER/PHARMACIST → PHARMACY_DOC, MESSAGE_ATTACHMENT; ASSISTANT → ' +
-      'MESSAGE_ATTACHMENT; DELIVERY_COMPANY_ADMIN → DRIVER_DOC; DRIVER → DRIVER_DOC, PROOF_OF_DELIVERY.',
+      'MESSAGE_ATTACHMENT; DELIVERY_COMPANY_ADMIN → DELIVERY_COMPANY_DOC; DRIVER → DRIVER_DOC, PROOF_OF_DELIVERY.',
   })
   @ApiEnvelope(FileDto, { isArray: true, status: 201 })
   @ApiErrors(

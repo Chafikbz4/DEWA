@@ -20,7 +20,8 @@ export class MessageSender {
   async send(
     channel: IdentifierType,
     to: string,
-    template: 'otp' | 'account_exists' | 'staff_invitation',
+    template:
+      'otp' | 'account_exists' | 'staff_invitation' | 'driver_invitation',
     lang: Lang,
     params?: Record<string, string | number>,
   ) {

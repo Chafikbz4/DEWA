@@ -164,3 +164,20 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `SETTLEMENT_INVALID_STATE` | 409 | Action impossible dans l'état actuel du règlement. | لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للتسوية. |
 | `RECONCILIATION_ISSUE_NOT_FOUND` | 404 | Anomalie de rapprochement introuvable ou déjà résolue. | مشكلة المطابقة غير موجودة أو تم حلها. |
 | `PERMISSION_DENIED` | 403 | Vous n'avez pas la permission d'effectuer cette action. | ليست لديك صلاحية تنفيذ هذا الإجراء. |
+| `DELIVERY_NOT_FOUND` | 404 | Livraison introuvable. | التوصيل غير موجود. |
+| `DELIVERY_ALREADY_TAKEN` | 409 | Cette course a déjà été prise par un autre livreur. | تم أخذ هذه التوصيلة من طرف سائق آخر. |
+| `DELIVERY_INVALID_TRANSITION` | 409 | Action impossible dans l'état actuel de la livraison. | لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للتوصيل. |
+| `DELIVERY_VERSION_CONFLICT` | 409 | La livraison a été modifiée entre-temps. Rechargez et réessayez. | تم تعديل التوصيل في الأثناء. أعد التحميل وحاول مجددًا. |
+| `DELIVERY_RELEASE_LIMIT_REACHED` | 429 | Vous avez atteint le nombre maximal de courses rendues aujourd'hui. | لقد بلغت الحد الأقصى للتوصيلات المُعادة اليوم. |
+| `DELIVERY_CODE_INVALID` | 400 | Code incorrect. | الرمز غير صحيح. |
+| `DELIVERY_CODE_LOCKED` | 429 | Trop de tentatives : un nouveau code doit être généré. | محاولات كثيرة: يجب إنشاء رمز جديد. |
+| `DELIVERY_PROOF_REQUIRED` | 400 | Une seule preuve de livraison valide est requise (code, signature ou photo sans visage). | يلزم دليل تسليم واحد صالح (رمز أو توقيع أو صورة بدون وجه). |
+| `DELIVERY_LOCATION_THROTTLED` | 429 | Position mise à jour trop souvent. | تحديث الموقع متكرر جدًا. |
+| `DRIVER_PROFILE_NOT_FOUND` | 404 | Profil livreur introuvable. | ملف السائق غير موجود. |
+| `DRIVER_NOT_VERIFIED` | 403 | Votre compte livreur doit être vérifié pour accéder aux courses. | يجب التحقق من حساب السائق للوصول إلى التوصيلات. |
+| `DRIVER_NOT_AVAILABLE` | 409 | Passez en ligne pour accepter une course. | قم بتفعيل التوفر لقبول توصيلة. |
+| `DELIVERY_COMPANY_NOT_FOUND` | 404 | Société de livraison introuvable. | شركة التوصيل غير موجودة. |
+| `DELIVERY_COMPANY_NOT_VERIFIED` | 403 | La société de livraison doit être vérifiée. | يجب التحقق من شركة التوصيل. |
+| `DELIVERY_INVITATION_INVALID` | 400 | Invitation invalide ou expirée. | الدعوة غير صالحة أو منتهية. |
+| `DELIVERY_DRIVER_BUSY` | 409 | Le livreur a une course en cours. | لدى السائق توصيلة جارية. |
+| `DELIVERY_DRIVER_NOT_FOUND` | 404 | Livreur introuvable. | السائق غير موجود. |

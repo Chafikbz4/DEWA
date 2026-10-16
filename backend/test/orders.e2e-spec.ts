@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, lt, ne } from 'drizzle-orm';
 import {
   offers,
   orders,
@@ -663,6 +663,17 @@ describe('Orders & state machine (e2e)', () => {
         .update(orders)
         .set({ paymentDeadlineAt: new Date(Date.now() - 60_000) })
         .where(eq(orders.id, order.id));
+      // Orders left due by earlier runs (shared e2e DB) would make the job slow: move them out of its window.
+      await ctx.db
+        .update(orders)
+        .set({ paymentDeadlineAt: new Date(Date.now() + 86_400_000) })
+        .where(
+          and(
+            eq(orders.status, 'AWAITING_PAYMENT'),
+            lt(orders.paymentDeadlineAt, new Date()),
+            ne(orders.id, order.id),
+          ),
+        );
       expect(
         await ctx.app.get(OrdersService).cancelUnpaid(),
       ).toBeGreaterThanOrEqual(1);
@@ -682,6 +693,16 @@ describe('Orders & state machine (e2e)', () => {
         .update(orders)
         .set({ statusChangedAt: new Date(Date.now() - 24 * 3600_000) })
         .where(eq(orders.id, o2.id));
+      await ctx.db
+        .update(orders)
+        .set({ statusChangedAt: new Date() })
+        .where(
+          and(
+            eq(orders.status, 'PHARMACIST_VALIDATION_PENDING'),
+            lt(orders.statusChangedAt, new Date(Date.now() - 3600_000)),
+            ne(orders.id, o2.id),
+          ),
+        );
       expect(
         await ctx.app.get(OrdersService).expireValidation(),
       ).toBeGreaterThanOrEqual(1);
@@ -693,7 +714,7 @@ describe('Orders & state machine (e2e)', () => {
         status: 'CANCELLED',
         cancelReason: 'pharmacist_validation_timeout',
       });
-    });
+    }, 180_000);
 
     it('filters views by role and hides orders from non-parties', async () => {
       const f = await offerFlow();

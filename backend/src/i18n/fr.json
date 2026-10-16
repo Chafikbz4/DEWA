@@ -156,7 +156,24 @@
     "RECEIPT_NOT_FOUND": "Reçu introuvable.",
     "SETTLEMENT_INVALID_STATE": "Action impossible dans l'état actuel du règlement.",
     "RECONCILIATION_ISSUE_NOT_FOUND": "Anomalie de rapprochement introuvable ou déjà résolue.",
-    "PERMISSION_DENIED": "Vous n'avez pas la permission d'effectuer cette action."
+    "PERMISSION_DENIED": "Vous n'avez pas la permission d'effectuer cette action.",
+    "DELIVERY_NOT_FOUND": "Livraison introuvable.",
+    "DELIVERY_ALREADY_TAKEN": "Cette course a déjà été prise par un autre livreur.",
+    "DELIVERY_INVALID_TRANSITION": "Action impossible dans l'état actuel de la livraison.",
+    "DELIVERY_VERSION_CONFLICT": "La livraison a été modifiée entre-temps. Rechargez et réessayez.",
+    "DELIVERY_RELEASE_LIMIT_REACHED": "Vous avez atteint le nombre maximal de courses rendues aujourd'hui.",
+    "DELIVERY_CODE_INVALID": "Code incorrect.",
+    "DELIVERY_CODE_LOCKED": "Trop de tentatives : un nouveau code doit être généré.",
+    "DELIVERY_PROOF_REQUIRED": "Une seule preuve de livraison valide est requise (code, signature ou photo sans visage).",
+    "DELIVERY_LOCATION_THROTTLED": "Position mise à jour trop souvent.",
+    "DRIVER_PROFILE_NOT_FOUND": "Profil livreur introuvable.",
+    "DRIVER_NOT_VERIFIED": "Votre compte livreur doit être vérifié pour accéder aux courses.",
+    "DRIVER_NOT_AVAILABLE": "Passez en ligne pour accepter une course.",
+    "DELIVERY_COMPANY_NOT_FOUND": "Société de livraison introuvable.",
+    "DELIVERY_COMPANY_NOT_VERIFIED": "La société de livraison doit être vérifiée.",
+    "DELIVERY_INVITATION_INVALID": "Invitation invalide ou expirée.",
+    "DELIVERY_DRIVER_BUSY": "Le livreur a une course en cours.",
+    "DELIVERY_DRIVER_NOT_FOUND": "Livreur introuvable."
   },
   "validation": {
     "default": "Valeur invalide.",
@@ -196,7 +213,8 @@
   "messages": {
     "otp": "DEWA : votre code de vérification est {code}. Il expire dans {minutes} min. Ne le partagez avec personne.",
     "account_exists": "DEWA : une inscription a été tentée avec vos coordonnées. Vous avez déjà un compte : connectez-vous ou réinitialisez votre mot de passe.",
-    "staff_invitation": "DEWA : vous êtes invité(e) à rejoindre la pharmacie {pharmacy} en tant que {role}. Code d’invitation : {token} (valable {days} jours)."
+    "staff_invitation": "DEWA : vous êtes invité(e) à rejoindre la pharmacie {pharmacy} en tant que {role}. Code d’invitation : {token} (valable {days} jours).",
+    "driver_invitation": "DEWA : la société de livraison {company} vous invite à rejoindre son équipe de livreurs. Code d’invitation : {token} (valable {days} jours)."
   },
   "notifications": {
     "REQUEST_RECEIVED": {
