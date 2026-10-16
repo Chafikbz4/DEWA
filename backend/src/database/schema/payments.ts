@@ -50,6 +50,11 @@ export const payments = pgTable(
     verifiedServerSideAt: tstz('verified_server_side_at'),
     failureCode: varchar('failure_code', { length: 64 }),
     rawProviderResponseEncrypted: text('raw_provider_response_encrypted'),
+    initiatedByUserId: uuid('initiated_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    /** Payment deadline copied from the order when the attempt starts. */
+    expiresAt: tstz('expires_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -85,6 +90,43 @@ export const paymentEvents = pgTable(
   (t) => [
     uniqueIndex('payment_events_provider_event_uq').on(t.providerEventId),
     index('payment_events_payment_idx').on(t.paymentId),
+  ],
+);
+
+/**
+ * Anomalies found by webhooks / the reconciliation job, handled by admins:
+ * AMOUNT_MISMATCH, DUPLICATE_PAYMENT, STALE_PENDING, MISSING_PAYMENT,
+ * ORPHAN_EVENT, PAID_ORDER_NOT_PAYABLE.
+ */
+export const paymentReconciliationIssues = pgTable(
+  'payment_reconciliation_issues',
+  {
+    id: pk(),
+    kind: varchar('kind', { length: 32 }).notNull(),
+    status: varchar('status', { length: 16 }).notNull().default('OPEN'),
+    paymentId: uuid('payment_id').references(() => payments.id, {
+      onDelete: 'set null',
+    }),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'set null',
+    }),
+    details: jsonb('details').notNull().default({}),
+    resolutionNote: text('resolution_note'),
+    resolvedBy: uuid('resolved_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    resolvedAt: tstz('resolved_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'reconciliation_kind_chk',
+      sql`${t.kind} IN ('AMOUNT_MISMATCH','DUPLICATE_PAYMENT','STALE_PENDING','MISSING_PAYMENT','ORPHAN_EVENT','PAID_ORDER_NOT_PAYABLE')`,
+    ),
+    check('reconciliation_status_chk', sql`${t.status} IN ('OPEN','RESOLVED')`),
+    index('reconciliation_status_kind_idx').on(t.status, t.kind, t.createdAt),
+    index('reconciliation_payment_idx').on(t.paymentId),
+    index('reconciliation_order_idx').on(t.orderId),
   ],
 );
 

@@ -179,6 +179,17 @@ export class EnvironmentVariables {
   @Matches(/^https?:\/\//)
   PUBLIC_BASE_URL = 'http://localhost:3000';
 
+  // ---- Payments ----
+  /** mock = MockPaymentProvider (dev/tests); satim = SATIM/Edahabia skeleton (not implemented). */
+  @IsIn(['mock', 'satim'])
+  PAYMENT_PROVIDER: 'mock' | 'satim' = 'mock';
+
+  /** HMAC secret for mock webhooks; a random per-process secret is used when unset. */
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  MOCK_PAYMENT_WEBHOOK_SECRET?: string;
+
   // ---- Files ----
   @Transform(toInt)
   @IsInt()

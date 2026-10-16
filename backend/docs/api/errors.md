@@ -148,3 +148,19 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `IDEMPOTENCY_KEY_INVALID` | 400 | En-tête Idempotency-Key invalide (8 à 128 caractères). | ترويسة Idempotency-Key غير صالحة (من 8 إلى 128 حرفًا). |
 | `IDEMPOTENCY_KEY_REUSED` | 409 | Cette clé d'idempotence a déjà été utilisée pour une autre requête. | تم استخدام مفتاح عدم التكرار هذا لطلب آخر. |
 | `IDEMPOTENCY_IN_PROGRESS` | 409 | Une requête identique est déjà en cours de traitement. | طلب مماثل قيد المعالجة بالفعل. |
+| `PAYMENT_NOT_FOUND` | 404 | Paiement introuvable. | الدفع غير موجود. |
+| `PAYMENT_NOT_ALLOWED` | 409 | Cette commande ne peut pas être payée dans son état actuel. | لا يمكن دفع هذا الطلب في حالته الحالية. |
+| `PAYMENT_DEADLINE_PASSED` | 409 | Le délai de paiement est dépassé. | انتهت مهلة الدفع. |
+| `PAYMENT_ALREADY_IN_PROGRESS` | 409 | Un paiement est déjà en cours pour cette commande. | هناك عملية دفع جارية بالفعل لهذا الطلب. |
+| `PAYMENT_NOT_ALLOWED_FOR_CATEGORY` | 403 | Le paiement en ligne n'est pas autorisé pour certains produits de cette commande. | الدفع الإلكتروني غير مسموح لبعض منتجات هذا الطلب. |
+| `PAYMENT_PROVIDER_ERROR` | 502 | Le service de paiement est indisponible. Réessayez plus tard. | خدمة الدفع غير متاحة. حاول لاحقًا. |
+| `PAYMENT_PROVIDER_UNKNOWN` | 404 | Prestataire de paiement inconnu. | مزود الدفع غير معروف. |
+| `PAYMENT_WEBHOOK_INVALID_SIGNATURE` | 401 | Signature de notification invalide. | توقيع الإشعار غير صالح. |
+| `MOCK_PROVIDER_DISABLED` | 404 | Le prestataire de test est désactivé. | مزود الاختبار معطّل. |
+| `REFUND_NOT_FOUND` | 404 | Remboursement introuvable. | الاسترداد غير موجود. |
+| `REFUND_NOT_ALLOWED` | 409 | Aucun remboursement possible pour cette commande. | لا يمكن الاسترداد لهذا الطلب. |
+| `REFUND_AMOUNT_INVALID` | 400 | Montant de remboursement invalide. | مبلغ الاسترداد غير صالح. |
+| `RECEIPT_NOT_FOUND` | 404 | Reçu introuvable. | الإيصال غير موجود. |
+| `SETTLEMENT_INVALID_STATE` | 409 | Action impossible dans l'état actuel du règlement. | لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للتسوية. |
+| `RECONCILIATION_ISSUE_NOT_FOUND` | 404 | Anomalie de rapprochement introuvable ou déjà résolue. | مشكلة المطابقة غير موجودة أو تم حلها. |
+| `PERMISSION_DENIED` | 403 | Vous n'avez pas la permission d'effectuer cette action. | ليست لديك صلاحية تنفيذ هذا الإجراء. |

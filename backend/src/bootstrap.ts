@@ -20,7 +20,16 @@ export function configureApp(app: INestApplication) {
   express.disable('x-powered-by');
 
   app.use(helmet());
-  app.use(json({ limit: '100kb' }));
+  // rawBody is kept for webhook signature verification (HMAC over the exact bytes).
+  app.use(
+    json({
+      limit: '100kb',
+      verify: (req: Request & { rawBody?: Buffer }, _res, buf) => {
+        if (req.url?.startsWith('/payments/webhook/'))
+          req.rawBody = Buffer.from(buf);
+      },
+    }),
+  );
   app.use(urlencoded({ extended: false, limit: '100kb' }));
   app.use((req: Request, res: Response, next: NextFunction) => {
     const incoming = req.headers['x-request-id'];

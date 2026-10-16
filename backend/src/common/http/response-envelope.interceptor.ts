@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  StreamableFile,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { map, Observable } from 'rxjs';
@@ -18,6 +19,8 @@ export class ResponseEnvelopeInterceptor implements NestInterceptor {
     const req = context.switchToHttp().getRequest<Request>();
     return next.handle().pipe(
       map((result: unknown) => {
+        // Binary downloads (e.g. receipt PDF) are sent as-is.
+        if (result instanceof StreamableFile) return result as never;
         if (result instanceof Paginated) {
           return {
             success: true,

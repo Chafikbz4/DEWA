@@ -733,6 +733,18 @@ erDiagram
     varchar_255_ processing_result
     timestamp_with_time_zone created_at
   }
+  payment_reconciliation_issues {
+    uuid id PK
+    varchar_32_ kind
+    varchar_16_ status
+    uuid payment_id FK
+    uuid order_id FK
+    jsonb details
+    text resolution_note
+    uuid resolved_by FK
+    timestamp_with_time_zone resolved_at
+    timestamp_with_time_zone created_at
+  }
   payments {
     uuid id PK
     uuid order_id FK
@@ -746,6 +758,8 @@ erDiagram
     timestamp_with_time_zone verified_server_side_at
     varchar_64_ failure_code
     text raw_provider_response_encrypted
+    uuid initiated_by_user_id FK
+    timestamp_with_time_zone expires_at
     timestamp_with_time_zone created_at
     timestamp_with_time_zone updated_at
   }
@@ -796,7 +810,11 @@ erDiagram
   }
   pharmacies ||--o{ commission_rules : "pharmacy_id (opt)"
   payments ||--o{ payment_events : "payment_id (opt)"
+  payments ||--o{ payment_reconciliation_issues : "payment_id (opt)"
+  orders ||--o{ payment_reconciliation_issues : "order_id (opt)"
+  users ||--o{ payment_reconciliation_issues : "resolved_by (opt)"
   orders ||--o{ payments : "order_id"
+  users ||--o{ payments : "initiated_by_user_id (opt)"
   orders ||--o{ receipts : "order_id"
   payments ||--o{ receipts : "payment_id (opt)"
   files ||--o{ receipts : "file_id (opt)"
@@ -1867,6 +1885,26 @@ Provider webhooks / callbacks (idempotent on provider_event_id).
 
 **Indexes:** `payment_events_provider_event_uq` (unique) on (provider_event_id); `payment_events_payment_idx` on (payment_id)
 
+#### `payment_reconciliation_issues`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `kind` | varchar(32) | no |  |  |
+| `status` | varchar(16) | no | 'OPEN' |  |
+| `payment_id` | uuid | yes |  | payments.id (on delete set null) |
+| `order_id` | uuid | yes |  | orders.id (on delete set null) |
+| `details` | jsonb | no | [object Object] |  |
+| `resolution_note` | text | yes |  |  |
+| `resolved_by` | uuid | yes |  | users.id (on delete set null) |
+| `resolved_at` | timestamp with time zone | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `reconciliation_status_kind_idx` on (status, kind, created_at); `reconciliation_payment_idx` on (payment_id); `reconciliation_order_idx` on (order_id)
+
+**Checks:** `reconciliation_kind_chk`: `"kind" IN ('AMOUNT_MISMATCH','DUPLICATE_PAYMENT','STALE_PENDING','MISSING_PAYMENT','ORPHAN_EVENT','PAID_ORDER_NOT_PAYABLE')`; `reconciliation_status_chk`: `"status" IN ('OPEN','RESOLVED')`
+
 #### `payments`
 
 Payment attempts. CONFIRMED requires server-side verification (DB CHECK).
@@ -1885,6 +1923,8 @@ Payment attempts. CONFIRMED requires server-side verification (DB CHECK).
 | `verified_server_side_at` | timestamp with time zone | yes |  |  |
 | `failure_code` | varchar(64) | yes |  |  |
 | `raw_provider_response_encrypted` | text | yes |  |  |
+| `initiated_by_user_id` | uuid | yes |  | users.id (on delete set null) |
+| `expires_at` | timestamp with time zone | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 | `updated_at` | timestamp with time zone | no | now() |  |
 
