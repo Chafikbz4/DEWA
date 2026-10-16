@@ -66,3 +66,48 @@ export class ConsoleEmailProvider
     this.push({ channel: 'EMAIL', to, subject, body, at: new Date() });
   }
 }
+
+export const PUSH_PROVIDER = Symbol('PUSH_PROVIDER');
+
+/** Implement with FCM / APNs. Payloads must never contain medical details. */
+export interface IPushProvider {
+  send(
+    tokens: string[],
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ): Promise<void>;
+}
+
+export interface PushMessage {
+  tokens: string[];
+  title: string;
+  body: string;
+  data: Record<string, string>;
+  at: Date;
+}
+
+/** DEVELOPMENT/TEST push mock. `failNext` simulates provider outages. */
+@Injectable()
+export class MockPushProvider implements IPushProvider {
+  private readonly logger = new Logger('MockPush');
+  readonly outbox: PushMessage[] = [];
+  /** Number of upcoming send() calls that will throw. */
+  failNext = 0;
+
+  async send(
+    tokens: string[],
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ) {
+    if (this.failNext > 0) {
+      this.failNext--;
+      throw new Error('Mock push provider unavailable');
+    }
+    this.outbox.push({ tokens, title, body, data, at: new Date() });
+    if (this.outbox.length > 200) this.outbox.shift();
+    if (process.env.NODE_ENV !== 'test')
+      this.logger.log(`[PUSH ×${tokens.length}] ${title} – ${body}`);
+  }
+}

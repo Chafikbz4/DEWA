@@ -220,6 +220,13 @@ export class EnvironmentVariables {
   @IsIn(['none'])
   CNAS_PROVIDER = 'none' as const;
 
+  /** Base delay of the exponential retry for notification delivery (ms). */
+  @Transform(toInt)
+  @IsInt()
+  @Min(10)
+  @Max(600_000)
+  NOTIFICATION_RETRY_BASE_MS = 2000;
+
   // ---- Background work ----
   /** Run cron jobs (expiry, timeouts, reconciliation…) in this instance. */
   @Transform(toBool)

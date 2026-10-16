@@ -16,6 +16,7 @@ import {
   EnvKeyProvider,
   KEY_PROVIDER,
 } from './crypto/crypto.service';
+import { AccessTokenVerifier } from './auth/access-token.verifier';
 import { UnitOfWork } from './events/unit-of-work';
 import { I18nService } from './i18n/i18n.service';
 
@@ -23,6 +24,7 @@ import { I18nService } from './i18n/i18n.service';
 @Global()
 @Module({
   providers: [
+    AccessTokenVerifier,
     // Swap for a KMS-backed IKeyProvider in production if available.
     {
       provide: KEY_PROVIDER,
@@ -42,6 +44,7 @@ import { I18nService } from './i18n/i18n.service';
     { provide: EMAIL_PROVIDER, useClass: ConsoleEmailProvider },
   ],
   exports: [
+    AccessTokenVerifier,
     CryptoService,
     UnitOfWork,
     SettingsService,

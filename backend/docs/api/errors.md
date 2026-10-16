@@ -121,3 +121,12 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `OFFER_ITEM_APPROVAL_NOT_PENDING` | 409 | Aucune approbation n'est attendue pour cet article. | لا توجد موافقة مطلوبة لهذا العنصر. |
 | `COMPLAINT_NOT_FOUND` | 404 | Réclamation introuvable. | الشكوى غير موجودة. |
 | `COMPLAINT_CLOSED` | 409 | Cette réclamation est clôturée. | هذه الشكوى مغلقة. |
+| `CONVERSATION_NOT_FOUND` | 404 | Conversation introuvable. | المحادثة غير موجودة. |
+| `CONVERSATION_CLOSED` | 409 | Cette conversation est clôturée. | هذه المحادثة مغلقة. |
+| `MESSAGE_EMPTY` | 400 | Le message est vide. | الرسالة فارغة. |
+| `MESSAGE_TOO_LONG` | 400 | Le message dépasse {max} caractères. | تتجاوز الرسالة {max} حرفًا. |
+| `MESSAGE_RATE_LIMITED` | 429 | Vous envoyez trop de messages. Patientez un instant. | أنت ترسل رسائل كثيرة جدًا. انتظر قليلًا. |
+| `MESSAGE_CONTAINS_PHONE` | 422 | Pour votre sécurité, ne partagez pas de numéro de téléphone dans la messagerie. | حفاظًا على سلامتك، لا تشارك أرقام الهاتف في المراسلة. |
+| `MESSAGE_BLOCKED_CONTENT` | 422 | Ce message contient des termes non autorisés. | تحتوي هذه الرسالة على كلمات غير مسموح بها. |
+| `MESSAGE_TYPE_NOT_ALLOWED` | 403 | Ce type de message n'est pas autorisé pour vous. | نوع الرسالة هذا غير مسموح لك. |
+| `NOTIFICATION_NOT_FOUND` | 404 | Notification introuvable. | الإشعار غير موجود. |

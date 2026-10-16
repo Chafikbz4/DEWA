@@ -1,5 +1,7 @@
 import {
+  boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -7,7 +9,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { createdAt, pk, tstz } from './_columns';
+import { createdAt, pk, tstz, updatedAt } from './_columns';
 import {
   conversationStatusEnum,
   messageTypeEnum,
@@ -33,6 +35,7 @@ export const conversations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
     status: conversationStatusEnum('status').notNull().default('OPEN'),
+    lastMessageAt: tstz('last_message_at'),
     createdAt: createdAt(),
   },
   (t) => [
@@ -61,6 +64,8 @@ export const messages = pgTable(
     fileId: uuid('file_id').references(() => files.id, {
       onDelete: 'set null',
     }),
+    /** e.g. { key, params } for SYSTEM messages, { offer_id, offer_item_ids } for substitution proposals. */
+    metadata: jsonb('metadata'),
     readAt: tstz('read_at'),
     createdAt: createdAt(),
   },
@@ -86,11 +91,42 @@ export const notifications = pgTable(
     payload: jsonb('payload'),
     channel: notificationChannelEnum('channel').notNull().default('IN_APP'),
     status: notificationStatusEnum('status').notNull().default('QUEUED'),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    sentAt: tstz('sent_at'),
+    deadLetteredAt: tstz('dead_lettered_at'),
     readAt: tstz('read_at'),
     createdAt: createdAt(),
   },
   (t) => [
     index('notifications_user_created_idx').on(t.userId, t.createdAt),
     index('notifications_status_created_idx').on(t.status, t.createdAt),
+  ],
+);
+
+export const notificationPreferences = pgTable('notification_preferences', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  pushEnabled: boolean('push_enabled').notNull().default(true),
+  smsEnabled: boolean('sms_enabled').notNull().default(true),
+  emailEnabled: boolean('email_enabled').notNull().default(true),
+  /** Notification types the user muted (in-app still recorded). */
+  mutedTypes: jsonb('muted_types').$type<string[]>().notNull().default([]),
+  updatedAt: updatedAt(),
+});
+
+/** Background jobs that exhausted their retries (operator follow-up). */
+export const jobDeadLetters = pgTable(
+  'job_dead_letters',
+  {
+    id: pk(),
+    jobName: varchar('job_name', { length: 100 }).notNull(),
+    payload: jsonb('payload'),
+    error: text('error'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('job_dead_letters_name_created_idx').on(t.jobName, t.createdAt),
   ],
 );

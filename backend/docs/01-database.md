@@ -584,6 +584,14 @@ erDiagram
     uuid pharmacy_id FK
     uuid patient_user_id FK
     conversation_status status
+    timestamp_with_time_zone last_message_at
+    timestamp_with_time_zone created_at
+  }
+  job_dead_letters {
+    uuid id PK
+    varchar_100_ job_name
+    jsonb payload
+    text error
     timestamp_with_time_zone created_at
   }
   messages {
@@ -593,8 +601,17 @@ erDiagram
     message_type message_type
     text body
     uuid file_id FK
+    jsonb metadata
     timestamp_with_time_zone read_at
     timestamp_with_time_zone created_at
+  }
+  notification_preferences {
+    uuid user_id PK
+    boolean push_enabled
+    boolean sms_enabled
+    boolean email_enabled
+    jsonb muted_types
+    timestamp_with_time_zone updated_at
   }
   notifications {
     uuid id PK
@@ -605,6 +622,10 @@ erDiagram
     jsonb payload
     notification_channel channel
     notification_status status
+    integer attempts
+    text last_error
+    timestamp_with_time_zone sent_at
+    timestamp_with_time_zone dead_lettered_at
     timestamp_with_time_zone read_at
     timestamp_with_time_zone created_at
   }
@@ -614,6 +635,7 @@ erDiagram
   conversations ||--o{ messages : "conversation_id"
   users ||--o{ messages : "sender_user_id (opt)"
   files ||--o{ messages : "file_id (opt)"
+  users ||--o{ notification_preferences : "user_id"
   users ||--o{ notifications : "user_id"
 ```
 
@@ -1638,9 +1660,23 @@ One thread per (request, pharmacy).
 | `pharmacy_id` | uuid | no |  | pharmacies.id (on delete restrict) |
 | `patient_user_id` | uuid | no |  | users.id (on delete restrict) |
 | `status` | conversation_status | no | 'OPEN' |  |
+| `last_message_at` | timestamp with time zone | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 
 **Indexes:** `conversations_request_pharmacy_uq` (unique) on (request_id, pharmacy_id); `conversations_patient_idx` on (patient_user_id); `conversations_pharmacy_idx` on (pharmacy_id, status)
+
+#### `job_dead_letters`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `id` | uuid **PK** | no | gen_random_uuid() |  |
+| `job_name` | varchar(100) | no |  |  |
+| `payload` | jsonb | yes |  |  |
+| `error` | text | yes |  |  |
+| `created_at` | timestamp with time zone | no | now() |  |
+
+**Indexes:** `job_dead_letters_name_created_idx` on (job_name, created_at)
 
 #### `messages`
 
@@ -1654,10 +1690,23 @@ Messages inside a conversation (clarifications, attachments).
 | `message_type` | message_type | no | 'TEXT' |  |
 | `body` | text | yes |  |  |
 | `file_id` | uuid | yes |  | files.id (on delete set null) |
+| `metadata` | jsonb | yes |  |  |
 | `read_at` | timestamp with time zone | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 
 **Indexes:** `messages_conversation_created_idx` on (conversation_id, created_at)
+
+#### `notification_preferences`
+
+
+| Column | Type | Null | Default | References |
+|---|---|---|---|---|
+| `user_id` | uuid **PK** | no | gen_random_uuid() | users.id (on delete cascade) |
+| `push_enabled` | boolean | no | true |  |
+| `sms_enabled` | boolean | no | true |  |
+| `email_enabled` | boolean | no | true |  |
+| `muted_types` | jsonb | no |  |  |
+| `updated_at` | timestamp with time zone | no | now() |  |
 
 #### `notifications`
 
@@ -1673,6 +1722,10 @@ Notifications with i18n title/body keys, per channel.
 | `payload` | jsonb | yes |  |  |
 | `channel` | notification_channel | no | 'IN_APP' |  |
 | `status` | notification_status | no | 'QUEUED' |  |
+| `attempts` | integer | no | 0 |  |
+| `last_error` | text | yes |  |  |
+| `sent_at` | timestamp with time zone | yes |  |  |
+| `dead_lettered_at` | timestamp with time zone | yes |  |  |
 | `read_at` | timestamp with time zone | yes |  |  |
 | `created_at` | timestamp with time zone | no | now() |  |
 

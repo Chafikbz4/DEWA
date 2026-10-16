@@ -21,7 +21,10 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { DeliveryConfigModule } from './modules/delivery-config/delivery-config.module';
 import { FilesModule } from './modules/files/files.module';
 import { MessagingCoreModule } from './modules/messaging/messaging-core.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OffersModule } from './modules/offers/offers.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 import { SupportModule } from './modules/support/support.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
@@ -69,6 +72,9 @@ import { UsersModule } from './modules/users/users.module';
     FilesModule,
     GeoModule,
     MessagingCoreModule,
+    NotificationsModule,
+    RealtimeModule,
+    MessagingModule,
     DeliveryConfigModule,
     CatalogModule,
     OffersModule,

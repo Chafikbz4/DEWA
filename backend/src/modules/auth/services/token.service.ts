@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -7,6 +8,8 @@ import { CryptoService } from '../../../common/crypto/crypto.service';
 import { AppException } from '../../../common/errors/app.exception';
 import { Database, DbOrTx, DRIZZLE } from '../../../database/database.module';
 import { Role, sessions } from '../../../database/schema';
+
+export const SESSIONS_REVOKED_EVENT = 'auth.sessions_revoked';
 
 export interface TokenPair {
   access_token: string;
@@ -43,6 +46,7 @@ export class TokenService {
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly jwt: JwtService,
     private readonly crypto: CryptoService,
+    private readonly events: EventEmitter2,
     config: ConfigService,
   ) {
     this.accessTtl = config.get<number>('JWT_ACCESS_TTL_SECONDS', 900);
@@ -95,6 +99,12 @@ export class TokenService {
     return { sessionId, secret };
   }
 
+  /** Lets realtime connections bound to revoked sessions be closed. */
+  private announce(sessionIds: string[]) {
+    if (sessionIds.length)
+      this.events.emit(SESSIONS_REVOKED_EVENT, { sessionIds });
+  }
+
   secretMatches(secret: string, storedHash: string) {
     return this.crypto.hmacEquals(secret, storedHash);
   }
@@ -105,6 +115,7 @@ export class TokenService {
       .set({ revokedAt: new Date(), revokeReason: reason })
       .where(and(eq(sessions.id, sessionId), isNull(sessions.revokedAt)))
       .returning({ id: sessions.id });
+    this.announce(res.map((r) => r.id));
     return res.length;
   }
 
@@ -114,6 +125,7 @@ export class TokenService {
       .set({ revokedAt: new Date(), revokeReason: reason })
       .where(and(eq(sessions.familyId, familyId), isNull(sessions.revokedAt)))
       .returning({ id: sessions.id });
+    this.announce(res.map((r) => r.id));
     return res.length;
   }
 
@@ -134,6 +146,7 @@ export class TokenService {
       .set({ revokedAt: new Date(), revokeReason: reason })
       .where(and(...conditions))
       .returning({ id: sessions.id });
+    this.announce(res.map((r) => r.id));
     return res.length;
   }
 

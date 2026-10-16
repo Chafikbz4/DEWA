@@ -49,6 +49,7 @@ export class ConversationsService {
       type: MessageType;
       body: string | null;
       fileId?: string | null;
+      metadata?: Record<string, unknown> | null;
     },
   ) {
     const [m] = await ctx.tx
@@ -59,8 +60,13 @@ export class ConversationsService {
         messageType: input.type,
         body: input.body,
         fileId: input.fileId ?? null,
+        metadata: input.metadata ?? null,
       })
       .returning();
+    await ctx.tx
+      .update(conversations)
+      .set({ lastMessageAt: m.createdAt })
+      .where(eq(conversations.id, conversation.id));
     const event: MessageCreatedEvent = {
       messageId: m.id,
       conversationId: conversation.id,
@@ -78,12 +84,15 @@ export class ConversationsService {
   systemMessage(
     ctx: TxContext,
     conversation: typeof conversations.$inferSelect,
-    body: string,
+    key: string,
+    metadata: Record<string, unknown> = {},
   ) {
+    // body = i18n key under `system.*`; clients translate it.
     return this.post(ctx, conversation, {
       senderUserId: null,
       type: 'SYSTEM',
-      body,
+      body: key,
+      metadata: { key, ...metadata },
     });
   }
 }

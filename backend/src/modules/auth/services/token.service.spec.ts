@@ -18,7 +18,13 @@ const crypto = new CryptoService(config);
 describe('TokenService', () => {
   it('issues an access JWT bound to a session and an opaque refresh token whose secret is stored hashed', async () => {
     const fake = createFakeDb();
-    const service = new TokenService(fake.db, jwt, crypto, config);
+    const service = new TokenService(
+      fake.db,
+      jwt,
+      crypto,
+      { emit: jest.fn() } as never,
+      config,
+    );
     const { tokens, sessionId } = await service.issue(
       { id: 'u1', role: 'PATIENT' },
       { ip: '1.2.3.4', userAgent: 'jest' },
@@ -45,7 +51,13 @@ describe('TokenService', () => {
 
   it('keeps the family id on rotation', async () => {
     const fake = createFakeDb();
-    const service = new TokenService(fake.db, jwt, crypto, config);
+    const service = new TokenService(
+      fake.db,
+      jwt,
+      crypto,
+      { emit: jest.fn() } as never,
+      config,
+    );
     await service.issue(
       { id: 'u1', role: 'PATIENT' },
       { ip: null, userAgent: null },
@@ -60,13 +72,25 @@ describe('TokenService', () => {
   it.each(['garbage', 'abc.def', `${'a'.repeat(36)}.short`])(
     'rejects malformed refresh token %p',
     (t) => {
-      const service = new TokenService(createFakeDb().db, jwt, crypto, config);
+      const service = new TokenService(
+        createFakeDb().db,
+        jwt,
+        crypto,
+        { emit: jest.fn() } as never,
+        config,
+      );
       expect(service.parseRefreshToken(t)).toBeNull();
     },
   );
 
   it('purpose tokens cannot be swapped (mfa vs reset)', async () => {
-    const service = new TokenService(createFakeDb().db, jwt, crypto, config);
+    const service = new TokenService(
+      createFakeDb().db,
+      jwt,
+      crypto,
+      { emit: jest.fn() } as never,
+      config,
+    );
     const mfa = await service.signMfaToken('u1', true);
     await expect(service.verifyMfaToken(mfa)).resolves.toEqual({
       userId: 'u1',

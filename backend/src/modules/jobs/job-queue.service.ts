@@ -1,4 +1,7 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Database, DRIZZLE } from '../../database/database.module';
+import { jobDeadLetters } from '../../database/schema';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 
@@ -10,14 +13,11 @@ export interface JobOptions {
 }
 
 type Handler = (payload: any) => Promise<void>;
-type DeadLetterHook = (
-  name: string,
-  payload: unknown,
-  error: Error,
-) => Promise<void> | void;
+export const JOB_DEAD_LETTERED_EVENT = 'job.dead_lettered';
 
 /**
- * Background jobs with retry + exponential backoff + dead-letter hook.
+ * Background jobs with retry + exponential backoff. Jobs that exhaust their
+ * attempts are stored in job_dead_letters and announced (JOB_DEAD_LETTERED_EVENT).
  * - REDIS_URL set → BullMQ (durable, multi-instance).
  * - otherwise     → in-process queue (dev/tests; jobs are lost on restart).
  */
@@ -32,9 +32,12 @@ export class JobQueueService implements OnModuleDestroy {
   private readonly redisUrl?: string;
   private readonly queues = new Map<string, Queue>();
   private readonly workers: Worker[] = [];
-  private deadLetterHook?: DeadLetterHook;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly events: EventEmitter2,
+  ) {
     this.redisUrl = config.get<string>('REDIS_URL') || undefined;
   }
 
@@ -56,10 +59,6 @@ export class JobQueueService implements OnModuleDestroy {
       });
       this.workers.push(worker);
     }
-  }
-
-  onDeadLetter(hook: DeadLetterHook) {
-    this.deadLetterHook = hook;
   }
 
   async enqueue(name: string, payload: unknown, delayMs = 0): Promise<void> {
@@ -110,10 +109,21 @@ export class JobQueueService implements OnModuleDestroy {
   private async deadLetter(name: string, payload: unknown, error: Error) {
     this.logger.error(`Job ${name} dead-lettered: ${error.message}`);
     try {
-      await this.deadLetterHook?.(name, payload, error);
+      await this.db.insert(jobDeadLetters).values({
+        jobName: name,
+        payload: payload as object,
+        error: error.message.slice(0, 2000),
+      });
     } catch (e) {
-      this.logger.error(`Dead-letter hook failed: ${(e as Error).message}`);
+      this.logger.error(
+        `Could not record dead letter: ${(e as Error).message}`,
+      );
     }
+    this.events.emit(JOB_DEAD_LETTERED_EVENT, {
+      name,
+      payload,
+      error: error.message,
+    });
   }
 
   /** Test helper: resolves when every in-process job (incl. retries) has finished. */

@@ -113,7 +113,16 @@
     "DELIVERY_ZONE_NOT_COVERED": "لا توجد منطقة توصيل تغطي هذا العنوان.",
     "OFFER_ITEM_APPROVAL_NOT_PENDING": "لا توجد موافقة مطلوبة لهذا العنصر.",
     "COMPLAINT_NOT_FOUND": "الشكوى غير موجودة.",
-    "COMPLAINT_CLOSED": "هذه الشكوى مغلقة."
+    "COMPLAINT_CLOSED": "هذه الشكوى مغلقة.",
+    "CONVERSATION_NOT_FOUND": "المحادثة غير موجودة.",
+    "CONVERSATION_CLOSED": "هذه المحادثة مغلقة.",
+    "MESSAGE_EMPTY": "الرسالة فارغة.",
+    "MESSAGE_TOO_LONG": "تتجاوز الرسالة {max} حرفًا.",
+    "MESSAGE_RATE_LIMITED": "أنت ترسل رسائل كثيرة جدًا. انتظر قليلًا.",
+    "MESSAGE_CONTAINS_PHONE": "حفاظًا على سلامتك، لا تشارك أرقام الهاتف في المراسلة.",
+    "MESSAGE_BLOCKED_CONTENT": "تحتوي هذه الرسالة على كلمات غير مسموح بها.",
+    "MESSAGE_TYPE_NOT_ALLOWED": "نوع الرسالة هذا غير مسموح لك.",
+    "NOTIFICATION_NOT_FOUND": "الإشعار غير موجود."
   },
   "validation": {
     "default": "قيمة غير صالحة.",
@@ -154,5 +163,96 @@
     "otp": "DEWA: رمز التحقق الخاص بك هو {code}. تنتهي صلاحيته خلال {minutes} دقائق. لا تشاركه مع أي شخص.",
     "account_exists": "DEWA: تمت محاولة التسجيل باستخدام بياناتك. لديك حساب بالفعل: سجّل الدخول أو أعد تعيين كلمة المرور.",
     "staff_invitation": "DEWA: تمت دعوتك للانضمام إلى صيدلية {pharmacy} بصفة {role}. رمز الدعوة: {token} (صالح لمدة {days} أيام)."
+  },
+  "notifications": {
+    "REQUEST_RECEIVED": {
+      "title": "طلب جديد",
+      "body": "تم توجيه الطلب {reference} إليكم."
+    },
+    "CLARIFICATION_REQUESTED": {
+      "title": "سؤال من صيدلية",
+      "body": "لدى إحدى الصيدليات سؤال حول طلبك {reference}."
+    },
+    "CLARIFICATION_ANSWERED": {
+      "title": "رد المريض",
+      "body": "أجاب المريض على سؤالكم ({reference})."
+    },
+    "OFFER_RECEIVED": {
+      "title": "عرض جديد",
+      "body": "تلقيت عرضًا لطلبك {reference}."
+    },
+    "OFFER_ACCEPTED": {
+      "title": "تم قبول العرض",
+      "body": "تم قبول عرضكم للطلب {reference}."
+    },
+    "NEW_MESSAGE": {
+      "title": "رسالة جديدة",
+      "body": "لديك رسالة جديدة بخصوص {reference}."
+    },
+    "REQUEST_EXPIRED": {
+      "title": "انتهت صلاحية الطلب",
+      "body": "انتهت صلاحية طلبك {reference} دون قبول أي عرض."
+    },
+    "REQUEST_CANCELLED": {
+      "title": "تم إلغاء الطلب",
+      "body": "تم إلغاء الطلب {reference}."
+    },
+    "ORDER_STATUS_CHANGED": {
+      "title": "متابعة الطلب",
+      "body": "طلبك {reference}: {status_label}."
+    },
+    "PHARMACY_ORDER_UPDATE": {
+      "title": "طلب شراء",
+      "body": "الطلب {reference}: {status_label}."
+    },
+    "DELIVERY_CODE": {
+      "title": "رمز التسليم",
+      "body": "الرمز الذي تعطيه لعامل التوصيل للطلب {reference}: {code}."
+    },
+    "PICKUP_CODE": {
+      "title": "رمز الاستلام",
+      "body": "رمز استلام الطلب {reference}: {code}."
+    },
+    "DELIVERY_JOB_AVAILABLE": {
+      "title": "توصيلة جديدة",
+      "body": "توصيلة جديدة متاحة بالقرب منك."
+    },
+    "PAYMENT_CONFIRMED": {
+      "title": "تم تأكيد الدفع",
+      "body": "تم تأكيد دفع الطلب {reference}."
+    },
+    "PAYMENT_FAILED": {
+      "title": "فشل الدفع",
+      "body": "لم يكتمل دفع الطلب {reference}."
+    },
+    "REFUND_COMPLETED": {
+      "title": "تم الاسترداد",
+      "body": "تم استرداد مبلغ الطلب {reference}."
+    },
+    "ACCOUNT_STATUS_CHANGED": {
+      "title": "حسابك",
+      "body": "تغيرت حالة حسابك: {status_label}."
+    },
+    "VERIFICATION_DECIDED": {
+      "title": "التحقق",
+      "body": "نتيجة التحقق: {status_label}."
+    },
+    "ADMIN_ALERT": {
+      "title": "تنبيه المنصة",
+      "body": "{message}"
+    }
+  },
+  "system": {
+    "request_status": {
+      "CLARIFICATION_REQUIRED": "الصيدلية بانتظار الرد على سؤالها.",
+      "AWAITING_PHARMACY_RESPONSE": "الطلب بانتظار رد الصيدليات.",
+      "OFFER_AVAILABLE": "يتوفر عرض.",
+      "OFFER_ACCEPTED": "تم قبول عرض.",
+      "EXPIRED": "انتهت صلاحية الطلب.",
+      "CANCELLED": "تم إلغاء الطلب."
+    },
+    "offer_sent": "أرسلت الصيدلية عرضًا.",
+    "offer_alternatives_pending": "يحتوي العرض على بدائل: وافق على كل بديل أو ارفضه.",
+    "conversation_closed": "تم إغلاق المحادثة."
   }
 }

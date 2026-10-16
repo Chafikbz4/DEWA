@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { map, Observable } from 'rxjs';
-import { ApiEnvelope, Paginated } from './envelope';
+import { ApiEnvelope, CursorPage, Paginated } from './envelope';
 
 /** Wraps every successful response in the unified envelope. */
 @Injectable()
@@ -23,7 +23,22 @@ export class ResponseEnvelopeInterceptor implements NestInterceptor {
             success: true,
             data: result.items,
             error: null,
-            meta: { request_id: req.requestId, pagination: result.pagination },
+            meta: {
+              request_id: req.requestId,
+              pagination: result.pagination,
+              ...result.extraMeta,
+            },
+          };
+        }
+        if (result instanceof CursorPage) {
+          return {
+            success: true,
+            data: result.items,
+            error: null,
+            meta: {
+              request_id: req.requestId,
+              cursor: { next_cursor: result.nextCursor, limit: result.limit },
+            },
           };
         }
         return {

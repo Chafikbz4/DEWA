@@ -376,3 +376,18 @@ export async function createAddress(
 }
 
 export const drainJobs = (ctx: TestCtx) => ctx.app.get(JobQueueService).drain();
+
+/** Polls until `check` returns a truthy value (async listeners / background jobs). */
+export async function waitFor<T>(
+  check: () => Promise<T | undefined | null | false>,
+  timeoutMs = 10_000,
+): Promise<T> {
+  const start = Date.now();
+  for (;;) {
+    const value = await check();
+    if (value) return value;
+    if (Date.now() - start > timeoutMs)
+      throw new Error('waitFor: condition not met in time');
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}

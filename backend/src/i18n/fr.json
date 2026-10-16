@@ -113,7 +113,16 @@
     "DELIVERY_ZONE_NOT_COVERED": "Aucune zone de livraison ne couvre cette adresse.",
     "OFFER_ITEM_APPROVAL_NOT_PENDING": "Aucune approbation n'est attendue pour cet article.",
     "COMPLAINT_NOT_FOUND": "Réclamation introuvable.",
-    "COMPLAINT_CLOSED": "Cette réclamation est clôturée."
+    "COMPLAINT_CLOSED": "Cette réclamation est clôturée.",
+    "CONVERSATION_NOT_FOUND": "Conversation introuvable.",
+    "CONVERSATION_CLOSED": "Cette conversation est clôturée.",
+    "MESSAGE_EMPTY": "Le message est vide.",
+    "MESSAGE_TOO_LONG": "Le message dépasse {max} caractères.",
+    "MESSAGE_RATE_LIMITED": "Vous envoyez trop de messages. Patientez un instant.",
+    "MESSAGE_CONTAINS_PHONE": "Pour votre sécurité, ne partagez pas de numéro de téléphone dans la messagerie.",
+    "MESSAGE_BLOCKED_CONTENT": "Ce message contient des termes non autorisés.",
+    "MESSAGE_TYPE_NOT_ALLOWED": "Ce type de message n'est pas autorisé pour vous.",
+    "NOTIFICATION_NOT_FOUND": "Notification introuvable."
   },
   "validation": {
     "default": "Valeur invalide.",
@@ -154,5 +163,96 @@
     "otp": "DEWA : votre code de vérification est {code}. Il expire dans {minutes} min. Ne le partagez avec personne.",
     "account_exists": "DEWA : une inscription a été tentée avec vos coordonnées. Vous avez déjà un compte : connectez-vous ou réinitialisez votre mot de passe.",
     "staff_invitation": "DEWA : vous êtes invité(e) à rejoindre la pharmacie {pharmacy} en tant que {role}. Code d’invitation : {token} (valable {days} jours)."
+  },
+  "notifications": {
+    "REQUEST_RECEIVED": {
+      "title": "Nouvelle demande",
+      "body": "La demande {reference} vous a été adressée."
+    },
+    "CLARIFICATION_REQUESTED": {
+      "title": "Question d’une pharmacie",
+      "body": "Une pharmacie a une question sur votre demande {reference}."
+    },
+    "CLARIFICATION_ANSWERED": {
+      "title": "Réponse du patient",
+      "body": "Le patient a répondu à votre question ({reference})."
+    },
+    "OFFER_RECEIVED": {
+      "title": "Nouvelle proposition",
+      "body": "Vous avez reçu une proposition pour votre demande {reference}."
+    },
+    "OFFER_ACCEPTED": {
+      "title": "Proposition acceptée",
+      "body": "Votre proposition pour la demande {reference} a été acceptée."
+    },
+    "NEW_MESSAGE": {
+      "title": "Nouveau message",
+      "body": "Vous avez un nouveau message concernant {reference}."
+    },
+    "REQUEST_EXPIRED": {
+      "title": "Demande expirée",
+      "body": "Votre demande {reference} a expiré sans proposition acceptée."
+    },
+    "REQUEST_CANCELLED": {
+      "title": "Demande annulée",
+      "body": "La demande {reference} a été annulée."
+    },
+    "ORDER_STATUS_CHANGED": {
+      "title": "Suivi de commande",
+      "body": "Votre commande {reference} : {status_label}."
+    },
+    "PHARMACY_ORDER_UPDATE": {
+      "title": "Commande",
+      "body": "La commande {reference} : {status_label}."
+    },
+    "DELIVERY_CODE": {
+      "title": "Code de livraison",
+      "body": "Code à donner au livreur pour la commande {reference} : {code}."
+    },
+    "PICKUP_CODE": {
+      "title": "Code de retrait livreur",
+      "body": "Code de retrait pour la commande {reference} : {code}."
+    },
+    "DELIVERY_JOB_AVAILABLE": {
+      "title": "Nouvelle course",
+      "body": "Une nouvelle livraison est disponible près de vous."
+    },
+    "PAYMENT_CONFIRMED": {
+      "title": "Paiement confirmé",
+      "body": "Le paiement de la commande {reference} est confirmé."
+    },
+    "PAYMENT_FAILED": {
+      "title": "Paiement échoué",
+      "body": "Le paiement de la commande {reference} n’a pas abouti."
+    },
+    "REFUND_COMPLETED": {
+      "title": "Remboursement effectué",
+      "body": "Le remboursement de la commande {reference} a été effectué."
+    },
+    "ACCOUNT_STATUS_CHANGED": {
+      "title": "Votre compte",
+      "body": "Le statut de votre compte a changé : {status_label}."
+    },
+    "VERIFICATION_DECIDED": {
+      "title": "Vérification",
+      "body": "Résultat de la vérification : {status_label}."
+    },
+    "ADMIN_ALERT": {
+      "title": "Alerte plateforme",
+      "body": "{message}"
+    }
+  },
+  "system": {
+    "request_status": {
+      "CLARIFICATION_REQUIRED": "La pharmacie attend une réponse à sa question.",
+      "AWAITING_PHARMACY_RESPONSE": "La demande est en attente de réponse des pharmacies.",
+      "OFFER_AVAILABLE": "Une proposition est disponible.",
+      "OFFER_ACCEPTED": "Une proposition a été acceptée.",
+      "EXPIRED": "La demande a expiré.",
+      "CANCELLED": "La demande a été annulée."
+    },
+    "offer_sent": "La pharmacie a envoyé une proposition.",
+    "offer_alternatives_pending": "La proposition contient des substitutions : approuvez ou refusez chacune d’elles.",
+    "conversation_closed": "Conversation clôturée."
   }
 }

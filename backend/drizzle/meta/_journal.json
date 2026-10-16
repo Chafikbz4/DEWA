@@ -57,6 +57,13 @@
       "when": 1792151185640,
       "tag": "0007_offer_item_position",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792152421896,
+      "tag": "0008_messaging_notifications",
+      "breakpoints": true
     }
   ]
 }
