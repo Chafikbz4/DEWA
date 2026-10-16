@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AccountStatusGuard } from './common/auth/account-status.guard';
 import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
@@ -15,7 +17,11 @@ import { validateEnv } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { FilesModule } from './modules/files/files.module';
+import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
+import { PatientsModule } from './modules/patients/patients.module';
+import { RequestsModule } from './modules/requests/requests.module';
 import { PharmaciesModule } from './modules/pharmacies/pharmacies.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -51,8 +57,14 @@ import { UsersModule } from './modules/users/users.module';
       inject: [ConfigService],
       useFactory: throttlerOptionsFactory,
     }),
+    EventEmitterModule.forRoot({ wildcard: false, maxListeners: 50 }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     CommonModule,
+    FilesModule,
+    GeoModule,
+    PatientsModule,
+    RequestsModule,
     AuthModule,
     UsersModule,
     PharmaciesModule,

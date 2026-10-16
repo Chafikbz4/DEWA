@@ -63,3 +63,30 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `CONSENT_NOT_FOUND` | 404 | Consentement introuvable. | الموافقة غير موجودة. |
 | `CONSENT_REQUIRED_NOT_REVOCABLE` | 400 | Ce consentement est nécessaire au service. Pour le retirer, demandez la suppression du compte. | هذه الموافقة ضرورية للخدمة. لسحبها، اطلب حذف الحساب. |
 | `GEO_INVALID_COMMUNE` | 400 | La commune ne correspond pas à la wilaya. | البلدية لا تنتمي إلى هذه الولاية. |
+| `FILE_REQUIRED` | 400 | Aucun fichier reçu. | لم يتم استلام أي ملف. |
+| `FILE_TOO_MANY` | 400 | Trop de fichiers dans une seule requête. | عدد الملفات كبير جدًا في طلب واحد. |
+| `FILE_TOO_LARGE` | 413 | Le fichier dépasse la taille maximale autorisée ({max} Mo). | يتجاوز الملف الحجم الأقصى المسموح به ({max} ميغابايت). |
+| `FILE_TYPE_NOT_ALLOWED` | 415 | Type de fichier non autorisé. Formats acceptés : JPEG, PNG, PDF. | نوع الملف غير مسموح به. الصيغ المقبولة: JPEG وPNG وPDF. |
+| `FILE_INFECTED` | 422 | Le fichier a été rejeté par l'analyse de sécurité. | تم رفض الملف من طرف الفحص الأمني. |
+| `FILE_NOT_FOUND` | 404 | Fichier introuvable. | الملف غير موجود. |
+| `FILE_PURPOSE_NOT_ALLOWED` | 403 | Vous ne pouvez pas téléverser ce type de document. | لا يمكنك رفع هذا النوع من المستندات. |
+| `FILE_URL_INVALID` | 403 | Lien de téléchargement invalide ou expiré. | رابط التنزيل غير صالح أو منتهي الصلاحية. |
+| `FILE_IN_USE` | 409 | Ce fichier est déjà utilisé et ne peut pas être supprimé. | هذا الملف مستخدم بالفعل ولا يمكن حذفه. |
+| `FILE_INVALID_FOR_USE` | 400 | Ce fichier ne peut pas être utilisé ici (type, propriétaire ou analyse en cours). | لا يمكن استخدام هذا الملف هنا (النوع أو المالك أو الفحص قيد التنفيذ). |
+| `ADDRESS_NOT_FOUND` | 404 | Adresse introuvable. | العنوان غير موجود. |
+| `DEPENDANT_NOT_FOUND` | 404 | Personne à charge introuvable. | الشخص المكفول غير موجود. |
+| `DEPENDANT_RELATIONSHIP_NOT_ALLOWED` | 403 | Les demandes ne sont pas autorisées pour ce lien de parenté. | الطلبات غير مسموح بها لهذه صلة القرابة. |
+| `DEPENDANT_NOT_VERIFIED` | 403 | Le lien avec cette personne doit d'abord être vérifié. | يجب التحقق أولًا من صلتك بهذا الشخص. |
+| `REQUEST_NOT_FOUND` | 404 | Demande introuvable. | الطلب غير موجود. |
+| `REQUEST_CONSENT_REQUIRED` | 400 | Vous devez accepter le partage de votre ordonnance avec les pharmacies. | يجب الموافقة على مشاركة وصفتك الطبية مع الصيدليات. |
+| `REQUEST_CATEGORY_RESTRICTED` | 422 | Cette catégorie de médicaments ne peut pas être demandée en ligne. | لا يمكن طلب هذه الفئة من الأدوية عبر الإنترنت. |
+| `REQUEST_DELIVERY_NOT_ALLOWED` | 422 | La livraison n'est pas disponible pour cette demande. Choisissez le retrait en pharmacie. | التوصيل غير متاح لهذا الطلب. اختر الاستلام من الصيدلية. |
+| `REQUEST_NO_PHARMACY_MATCHED` | 422 | Aucune pharmacie disponible ne couvre cette adresse pour le moment. | لا توجد صيدلية متاحة تغطي هذا العنوان حاليًا. |
+| `REQUEST_PHARMACY_NOT_ELIGIBLE` | 422 | Une des pharmacies choisies ne peut pas recevoir de demande. | إحدى الصيدليات المختارة لا يمكنها استقبال الطلبات. |
+| `REQUEST_TOO_MANY_PHARMACIES` | 400 | Trop de pharmacies sélectionnées (maximum {max}). | عدد الصيدليات المختارة كبير جدًا (الحد الأقصى {max}). |
+| `REQUEST_NOT_CANCELLABLE` | 409 | Cette demande ne peut plus être annulée. | لم يعد بالإمكان إلغاء هذا الطلب. |
+| `REQUEST_NOT_EDITABLE` | 409 | Cette demande ne peut plus être modifiée. | لم يعد بالإمكان تعديل هذا الطلب. |
+| `REQUEST_ITEM_NOT_FOUND` | 404 | Article introuvable. | العنصر غير موجود. |
+| `REQUEST_ITEM_LOCKED` | 409 | Cet article a été confirmé par le pharmacien et ne peut plus être modifié. | تم تأكيد هذا العنصر من طرف الصيدلي ولا يمكن تعديله. |
+| `REQUEST_HAS_ORDER` | 409 | Une commande existe pour cette demande : annulez la commande. | يوجد طلب شراء مرتبط بهذا الطلب: قم بإلغاء طلب الشراء. |
+| `CHIFA_DATA_REQUIRED` | 400 | La carte Chifa, le numéro d'assuré et le nom du titulaire sont requis. | بطاقة الشفاء ورقم المؤمن واسم صاحب البطاقة مطلوبة. |

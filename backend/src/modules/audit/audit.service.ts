@@ -30,7 +30,10 @@ export const AuditAction = {
   USER_STATUS_CHANGED: 'USER_STATUS_CHANGED',
   USER_ROLE_CHANGED: 'USER_ROLE_CHANGED',
 } as const;
-export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction];
+export type AuditActionType =
+  | (typeof AuditAction)[keyof typeof AuditAction]
+  // Domain modules add their own namespaced actions (e.g. REQUEST_CREATED).
+  | (string & {});
 
 export interface AuditEntry {
   action: AuditActionType;

@@ -41,7 +41,7 @@
 | `device_platform` | `ios`, `android`, `web` |
 | `document_review_status` | `PENDING`, `APPROVED`, `REJECTED` |
 | `driver_status` | `PENDING_VERIFICATION`, `VERIFIED`, `SUSPENDED` |
-| `file_purpose` | `PRESCRIPTION`, `CHIFA_CARD`, `PHARMACY_DOC`, `DRIVER_DOC`, `MESSAGE_ATTACHMENT`, `PROOF_OF_DELIVERY` |
+| `file_purpose` | `PRESCRIPTION`, `CHIFA_CARD`, `PHARMACY_DOC`, `DRIVER_DOC`, `MESSAGE_ATTACHMENT`, `PROOF_OF_DELIVERY`, `DEPENDANT_PROOF` |
 | `file_quality_status` | `UNCHECKED`, `READABLE`, `UNREADABLE` |
 | `fulfillment_type` | `DELIVERY`, `PICKUP` |
 | `gender` | `MALE`, `FEMALE` |
@@ -71,6 +71,7 @@
 | `request_item_source` | `PATIENT`, `OCR`, `PHARMACIST` |
 | `request_status` | `REQUEST_SUBMITTED`, `AWAITING_PHARMACY_RESPONSE`, `CLARIFICATION_REQUIRED`, `OFFER_AVAILABLE`, `OFFER_ACCEPTED`, `EXPIRED`, `CANCELLED` |
 | `request_type` | `PRESCRIPTION`, `CHIFA`, `PRODUCT` |
+| `request_urgency` | `NORMAL`, `URGENT` |
 | `retention_job_status` | `RUNNING`, `SUCCEEDED`, `FAILED` |
 | `role` | `PATIENT`, `PHARMACY_OWNER`, `PHARMACIST`, `PHARMACY_ASSISTANT`, `DELIVERY_COMPANY_ADMIN`, `DRIVER`, `ADMIN`, `SUPER_ADMIN` |
 | `sensitive_resource_type` | `PRESCRIPTION`, `CHIFA`, `PATIENT_PROFILE` |
@@ -496,6 +497,7 @@ erDiagram
     uuid dependant_id FK
     request_type request_type
     request_status status
+    request_urgency urgency
     uuid address_id FK
     jsonb delivery_address_snapshot
     text patient_note
@@ -1545,6 +1547,7 @@ A patient request (prescription / CHIFA / product) sent to pharmacies.
 | `dependant_id` | uuid | yes |  | dependants.id (on delete set null) |
 | `request_type` | request_type | no |  |  |
 | `status` | request_status | no | 'REQUEST_SUBMITTED' |  |
+| `urgency` | request_urgency | no | 'NORMAL' |  |
 | `address_id` | uuid | yes |  | addresses.id (on delete set null) |
 | `delivery_address_snapshot` | jsonb | yes |  |  |
 | `patient_note` | text | yes |  |  |

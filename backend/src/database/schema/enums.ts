@@ -52,6 +52,7 @@ export const filePurposeEnum = pgEnum('file_purpose', [
   'DRIVER_DOC',
   'MESSAGE_ATTACHMENT',
   'PROOF_OF_DELIVERY',
+  'DEPENDANT_PROOF',
 ]);
 export const malwareScanStatusEnum = pgEnum('malware_scan_status', [
   'PENDING',
@@ -126,6 +127,10 @@ export const requestStatusEnum = pgEnum('request_status', [
   'OFFER_ACCEPTED',
   'EXPIRED',
   'CANCELLED',
+]);
+export const requestUrgencyEnum = pgEnum('request_urgency', [
+  'NORMAL',
+  'URGENT',
 ]);
 export const requestTypeEnum = pgEnum('request_type', [
   'PRESCRIPTION',

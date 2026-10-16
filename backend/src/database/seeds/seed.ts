@@ -8,55 +8,19 @@ import { eq, sql } from 'drizzle-orm';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { hashPassword } from '../../common/crypto/password';
+import { SETTING_DEFAULTS } from '../../modules/settings/settings.defaults';
 import * as schema from '../schema';
 import * as geo from './data/algeria-geo.json';
 
 type Db = NodePgDatabase<typeof schema>;
 
-export const PLATFORM_SETTINGS: {
-  key: string;
-  value: unknown;
-  description: string;
-}[] = [
-  {
-    key: 'payment_before_validation',
-    value: false,
-    description:
-      'If true, the patient pays before the pharmacist validates the order. Default false: pharmacist validates first.',
-  },
-  {
-    key: 'request_expiry_hours',
-    value: 24,
-    description: 'Hours before an unanswered request expires.',
-  },
-  {
-    key: 'offer_validity_hours',
-    value: 12,
-    description: 'Default validity of a pharmacy offer, in hours.',
-  },
-  {
-    key: 'payment_deadline_minutes',
-    value: 30,
-    description: 'Minutes the patient has to pay an accepted offer.',
-  },
-  {
-    key: 'max_pharmacies_per_request',
-    value: 5,
-    description: 'Maximum pharmacies a single request is sent to.',
-  },
-  {
-    key: 'delivery_enabled',
-    value: false,
-    description:
-      'Global switch for home delivery (off until delivery partners and legal review are in place).',
-  },
-  {
-    key: 'sensitive_data_retention_days',
-    value: 365,
-    description:
-      'Days prescriptions/CHIFA images are kept after the related order is closed. PLACEHOLDER – must be confirmed by legal counsel (Law 18-07).',
-  },
-];
+export const PLATFORM_SETTINGS = Object.entries(SETTING_DEFAULTS).map(
+  ([key, { value, description }]) => ({
+    key,
+    value: value as unknown,
+    description,
+  }),
+);
 
 /** Example policies – ALL disabled. Enabling requires a reviewed legal basis (DB-enforced). */
 const ELIGIBILITY_POLICIES: (typeof schema.eligibilityPolicies.$inferInsert)[] =

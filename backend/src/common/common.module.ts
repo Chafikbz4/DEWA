@@ -1,5 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { AuditService } from '../modules/audit/audit.service';
+import { SensitiveAccessService } from '../modules/audit/sensitive-access.service';
+import { JobQueueService } from '../modules/jobs/job-queue.service';
+import { SettingsService } from '../modules/settings/settings.service';
 import { MessageSender } from '../modules/messaging-providers/message-sender.service';
 import {
   ConsoleEmailProvider,
@@ -7,14 +10,30 @@ import {
   EMAIL_PROVIDER,
   SMS_PROVIDER,
 } from '../modules/messaging-providers/providers';
-import { CryptoService } from './crypto/crypto.service';
+import { ConfigService } from '@nestjs/config';
+import {
+  CryptoService,
+  EnvKeyProvider,
+  KEY_PROVIDER,
+} from './crypto/crypto.service';
+import { UnitOfWork } from './events/unit-of-work';
 import { I18nService } from './i18n/i18n.service';
 
 /** Cross-cutting services available everywhere. */
 @Global()
 @Module({
   providers: [
+    // Swap for a KMS-backed IKeyProvider in production if available.
+    {
+      provide: KEY_PROVIDER,
+      inject: [ConfigService],
+      useFactory: (c: ConfigService) => new EnvKeyProvider(c),
+    },
     CryptoService,
+    UnitOfWork,
+    SettingsService,
+    JobQueueService,
+    SensitiveAccessService,
     I18nService,
     AuditService,
     MessageSender,
@@ -24,6 +43,10 @@ import { I18nService } from './i18n/i18n.service';
   ],
   exports: [
     CryptoService,
+    UnitOfWork,
+    SettingsService,
+    JobQueueService,
+    SensitiveAccessService,
     I18nService,
     AuditService,
     MessageSender,

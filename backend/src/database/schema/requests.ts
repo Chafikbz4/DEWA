@@ -22,6 +22,7 @@ import {
   requestItemSourceEnum,
   requestStatusEnum,
   requestTypeEnum,
+  requestUrgencyEnum,
 } from './enums';
 import { files } from './files';
 import { consentRecords, users } from './identity';
@@ -48,6 +49,7 @@ export const requests = pgTable(
     }),
     requestType: requestTypeEnum('request_type').notNull(),
     status: requestStatusEnum('status').notNull().default('REQUEST_SUBMITTED'),
+    urgency: requestUrgencyEnum('urgency').notNull().default('NORMAL'),
     addressId: uuid('address_id').references(() => addresses.id, {
       onDelete: 'set null',
     }),

@@ -2,6 +2,7 @@ import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -161,6 +162,69 @@ export class EnvironmentVariables {
   @Transform(toBool)
   @IsBoolean()
   SWAGGER_ENABLED = true;
+
+  // ---- Encryption keys (rotation) ----
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{1,16}$/)
+  ENCRYPTION_KEY_ID?: string;
+
+  /** Retired keys kept for decryption: "v0:<base64>,v1:<base64>" */
+  @IsOptional()
+  @IsString()
+  ENCRYPTION_KEYS_PREVIOUS?: string;
+
+  // ---- Public URL (signed file links, payment return URLs) ----
+  @IsString()
+  @Matches(/^https?:\/\//)
+  PUBLIC_BASE_URL = 'http://localhost:3000';
+
+  // ---- Files ----
+  @Transform(toInt)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  FILE_MAX_SIZE_MB = 10;
+
+  @Transform(toInt)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  FILE_MAX_FILES = 5;
+
+  @Transform(toInt)
+  @IsInt()
+  @Min(30)
+  @Max(3600)
+  FILE_URL_TTL_SECONDS = 300;
+
+  @IsIn(['local', 's3'])
+  STORAGE_DRIVER: 'local' | 's3' = 'local';
+
+  @IsString()
+  STORAGE_LOCAL_DIR = './storage';
+
+  @IsOptional() @IsString() S3_BUCKET?: string;
+  @IsOptional() @IsString() S3_REGION?: string;
+  @IsOptional() @IsString() S3_ENDPOINT?: string;
+  @IsOptional() @IsString() S3_ACCESS_KEY_ID?: string;
+  @IsOptional() @IsString() S3_SECRET_ACCESS_KEY?: string;
+  @Transform(toBool) @IsBoolean() S3_FORCE_PATH_STYLE = true;
+
+  @IsIn(['mock'])
+  MALWARE_SCANNER = 'mock' as const;
+
+  @IsIn(['mock', 'none'])
+  OCR_PROVIDER: 'mock' | 'none' = 'mock';
+
+  @IsIn(['none'])
+  CNAS_PROVIDER = 'none' as const;
+
+  // ---- Background work ----
+  /** Run cron jobs (expiry, timeouts, reconciliation…) in this instance. */
+  @Transform(toBool)
+  @IsBoolean()
+  JOBS_ENABLED = true;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

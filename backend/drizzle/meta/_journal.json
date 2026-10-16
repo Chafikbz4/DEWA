@@ -29,6 +29,13 @@
       "when": 1792110262624,
       "tag": "0003_staff_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792114022320,
+      "tag": "0004_patient_domain",
+      "breakpoints": true
     }
   ]
 }

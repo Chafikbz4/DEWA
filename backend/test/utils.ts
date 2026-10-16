@@ -172,3 +172,207 @@ export async function setPharmacyStatus(
 }
 
 export const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+// ------------------------------------------------------------ marketplace fixtures
+
+import { sql as dsql } from 'drizzle-orm';
+import {
+  communes as communesT,
+  eligibilityPolicies,
+  medicines,
+  pharmacyOpeningHours,
+  pharmacyServiceAreas,
+  pharmacyStaff as pharmacyStaffT,
+} from '../src/database/schema';
+import { JobQueueService } from '../src/modules/jobs/job-queue.service';
+
+/** 1×1 PNG. */
+export const PNG = Buffer.from(
+  '89504e470d0a1a0a0000000d4948445200000001000000010806000000' +
+    '1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082',
+  'hex',
+);
+
+export async function login(
+  ctx: TestCtx,
+  identifier: string,
+  password = PASSWORD,
+) {
+  const res = await ctx
+    .http()
+    .post('/auth/login')
+    .send({ identifier, password })
+    .expect(200);
+  return res.body.data.access_token as string;
+}
+
+/** Picks a random commune and disables pre-existing pharmacies there (isolation between runs). */
+export async function isolatedCommune(ctx: TestCtx) {
+  const [c] = await ctx.db
+    .select({ id: communesT.id, wilayaId: communesT.wilayaId })
+    .from(communesT)
+    .orderBy(dsql`random()`)
+    .limit(1);
+  await ctx.db
+    .update(pharmacies)
+    .set({ acceptsRequests: false })
+    .where(eq(pharmacies.communeId, c.id));
+  return c;
+}
+
+export interface PharmacyFixture {
+  pharmacyId: string;
+  ownerId: string;
+  ownerEmail: string;
+  ownerToken: string;
+}
+
+/** A VERIFIED pharmacy (open 24/7 unless open=false) with an ACTIVE owner. */
+export async function createPharmacy(
+  ctx: TestCtx,
+  opts: {
+    wilayaId: number;
+    communeId: number;
+    lat?: number;
+    lng?: number;
+    open?: boolean;
+    delivery?: boolean;
+    status?: 'VERIFIED' | 'DRAFT';
+  },
+): Promise<PharmacyFixture> {
+  const owner = await insertUser(ctx, 'PHARMACY_OWNER');
+  const [p] = await ctx.db
+    .insert(pharmacies)
+    .values({
+      nameFr: `Pharmacie E2E ${owner.id.slice(0, 6)}`,
+      nameAr: 'صيدلية اختبار',
+      authorizationNumber: `E2E-${owner.id}`,
+      wilayaId: opts.wilayaId,
+      communeId: opts.communeId,
+      addressLine: '1 Rue E2E',
+      latitude: opts.lat ?? 36.75,
+      longitude: opts.lng ?? 3.05,
+      status: opts.status ?? 'VERIFIED',
+      acceptsRequests: true,
+      deliveryAvailable: opts.delivery ?? false,
+    })
+    .returning({ id: pharmacies.id });
+  await ctx.db
+    .insert(pharmacyStaffT)
+    .values({ pharmacyId: p.id, userId: owner.id, staffRole: 'OWNER' });
+  await ctx.db.insert(pharmacyServiceAreas).values({
+    pharmacyId: p.id,
+    wilayaId: opts.wilayaId,
+    communeId: opts.communeId,
+  });
+  if (opts.open !== false) {
+    await ctx.db.insert(pharmacyOpeningHours).values(
+      [0, 1, 2, 3, 4, 5, 6].map((d) => ({
+        pharmacyId: p.id,
+        dayOfWeek: d,
+        is24h: true,
+      })),
+    );
+  }
+  return {
+    pharmacyId: p.id,
+    ownerId: owner.id,
+    ownerEmail: owner.email!,
+    ownerToken: await login(ctx, owner.email!),
+  };
+}
+
+export async function addStaff(
+  ctx: TestCtx,
+  pharmacyId: string,
+  staffRole: 'PHARMACIST' | 'ASSISTANT',
+) {
+  const u = await insertUser(
+    ctx,
+    staffRole === 'PHARMACIST' ? 'PHARMACIST' : 'PHARMACY_ASSISTANT',
+  );
+  await ctx.db
+    .insert(pharmacyStaffT)
+    .values({ pharmacyId, userId: u.id, staffRole });
+  return { userId: u.id, token: await login(ctx, u.email!) };
+}
+
+/** Enables a category policy (test DB only) – production requires a real legal review. */
+export async function enablePolicy(
+  ctx: TestCtx,
+  category: 'PRESCRIPTION' | 'OTC',
+  flags: { delivery?: boolean; payment?: boolean } = {},
+) {
+  const reviewer = await insertUser(ctx, 'SUPER_ADMIN');
+  await ctx.db
+    .update(eligibilityPolicies)
+    .set({
+      isEnabled: true,
+      allowedOnlineRequest: true,
+      allowedDelivery: flags.delivery ?? false,
+      allowedOnlinePayment: flags.payment ?? true,
+      legalBasisReference: 'E2E TEST ONLY – not a legal basis',
+      reviewedBy: reviewer.id,
+      reviewedAt: new Date(),
+    })
+    .where(eq(eligibilityPolicies.appliesToCategory, category));
+}
+
+export async function createMedicine(
+  ctx: TestCtx,
+  category: 'OTC' | 'PRESCRIPTION' | 'CONTROLLED',
+  name = 'Med',
+) {
+  const [m] = await ctx.db
+    .insert(medicines)
+    .values({
+      brandName: `${name} ${Date.now()}`,
+      innDci: name.toLowerCase(),
+      category,
+      requiresPrescription: category !== 'OTC',
+    })
+    .returning({ id: medicines.id });
+  return m.id;
+}
+
+export async function uploadFile(
+  ctx: TestCtx,
+  token: string,
+  purpose: string,
+  content = PNG,
+  name = 'page.png',
+) {
+  const res = await ctx
+    .http()
+    .post('/files/upload')
+    .set(bearer(token))
+    .field('purpose', purpose)
+    .attach('files', content, name)
+    .expect(201);
+  return res.body.data[0].id as string;
+}
+
+export async function createAddress(
+  ctx: TestCtx,
+  token: string,
+  wilayaId: number,
+  communeId: number,
+  lat = 36.7501,
+  lng = 3.0501,
+) {
+  const res = await ctx
+    .http()
+    .post('/patients/me/addresses')
+    .set(bearer(token))
+    .send({
+      wilaya_id: wilayaId,
+      commune_id: communeId,
+      street_line: '5 Rue Patient',
+      latitude: lat,
+      longitude: lng,
+    })
+    .expect(201);
+  return res.body.data.id as string;
+}
+
+export const drainJobs = (ctx: TestCtx) => ctx.app.get(JobQueueService).drain();
