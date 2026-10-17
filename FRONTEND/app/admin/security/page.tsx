@@ -1,0 +1,2 @@
+import { WorkspacePage } from "@/components/role-pages";
+export default function AdminSecurity() { return <WorkspacePage role="admin" title="Security and audit" eyebrow="ADMINISTRATION" description="Review security events and audit activity. Sensitive content requires a time-limited access grant." actions={[{ label: "Security events" }, { label: "Audit logs" }, { label: "Sensitive access grants" }]} />; }

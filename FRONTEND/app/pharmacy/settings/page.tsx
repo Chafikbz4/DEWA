@@ -1,0 +1,2 @@
+import { WorkspacePage } from "@/components/role-pages";
+export default function PharmacySettings() { return <WorkspacePage role="pharmacy" title="Pharmacy settings" eyebrow="PHARMACY SPACE" description="Configure your profile, hours, staff, service areas and payout details." actions={[{ label: "Edit profile" }, { label: "Opening hours" }, { label: "Staff and invitations" }, { label: "Verification documents" }]} />; }
