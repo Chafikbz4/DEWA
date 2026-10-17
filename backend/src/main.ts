@@ -1,11 +1,22 @@
-import { Logger } from '@nestjs/common';
+import { Logger, LogLevel } from '@nestjs/common';
+import {
+  JsonLogger,
+  RedactingConsoleLogger,
+} from './common/observability/json-logger';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const logger =
+    process.env.LOG_FORMAT === 'json'
+      ? new JsonLogger((process.env.LOG_LEVEL as LogLevel | undefined) ?? 'log')
+      : new RedactingConsoleLogger();
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+    logger,
+  });
   configureApp(app);
   const port = app.get(ConfigService).get<number>('PORT', 3000);
   await app.listen(port);

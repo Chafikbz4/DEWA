@@ -10,6 +10,11 @@ import { ResponseEnvelopeInterceptor } from './common/http/response-envelope.int
 import { SanitizePipe } from './common/http/sanitize.pipe';
 import { buildValidationPipe } from './common/http/validation';
 import { I18nService } from './common/i18n/i18n.service';
+import { metrics } from './common/observability/metrics';
+import { SecretFieldsInterceptor } from './common/observability/secret-fields.interceptor';
+import { Logger } from '@nestjs/common';
+
+const accessLog = new Logger('HTTP');
 
 /** Shared by main.ts and the e2e tests so both run the exact same stack. */
 export function configureApp(app: INestApplication) {
@@ -38,6 +43,26 @@ export function configureApp(app: INestApplication) {
         ? incoming
         : randomUUID();
     res.setHeader('X-Request-Id', req.requestId);
+    // Access log + metrics: route template (no ids, no query string), never bodies.
+    const started = process.hrtime.bigint();
+    res.on('finish', () => {
+      const seconds = Number(process.hrtime.bigint() - started) / 1e9;
+      const route = (req.route as { path?: string } | undefined)?.path
+        ? `${req.baseUrl}${(req.route as { path: string }).path}`
+        : 'unmatched';
+      metrics.observeHttp(req.method, route, res.statusCode, seconds);
+      if (req.path !== '/health/live' && req.path !== '/metrics')
+        accessLog.log(
+          JSON.stringify({
+            method: req.method,
+            route,
+            status: res.statusCode,
+            duration_ms: Math.round(seconds * 1000),
+            request_id: req.requestId,
+            user_id: (req.user as { id?: string } | undefined)?.id ?? null,
+          }),
+        );
+    });
     next();
   });
 
@@ -55,6 +80,7 @@ export function configureApp(app: INestApplication) {
       'Accept-Language',
       'X-Request-Id',
       'X-Device-Id',
+      'Idempotency-Key',
     ],
     exposedHeaders: ['X-Request-Id'],
     maxAge: 600,
@@ -62,30 +88,39 @@ export function configureApp(app: INestApplication) {
 
   app.useGlobalPipes(new SanitizePipe(), buildValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter(app.get(I18nService)));
-  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
+  // Order: envelope (outer) → secret-field stripping (inner, sees the raw controller result).
+  app.useGlobalInterceptors(
+    new ResponseEnvelopeInterceptor(),
+    new SecretFieldsInterceptor(),
+  );
   app.enableShutdownHooks();
 
   if (config.get<boolean>('SWAGGER_ENABLED')) {
-    const doc = SwaggerModule.createDocument(
-      app,
-      new DocumentBuilder()
-        .setTitle('DEWA API')
-        .setDescription(
-          'Bilingual (ar/fr) healthcare marketplace API. Every response uses the envelope ' +
-            '`{ success, data, error: { code, message_key, message, details }, meta: { request_id, pagination } }`. ' +
-            'Send `Accept-Language: ar` or `fr` to localise `error.message`. Full guides: /docs/api/*.md in the repo.',
-        )
-        .setVersion('0.2.0')
-        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
-        .addGlobalParameters({
-          name: 'Accept-Language',
-          in: 'header',
-          required: false,
-          schema: { type: 'string', enum: ['fr', 'ar'], default: 'fr' },
-        })
-        .build(),
-    );
+    const doc = buildOpenApiDocument(app);
     SwaggerModule.setup('docs', app, doc, { jsonDocumentUrl: 'docs-json' });
   }
   return app;
+}
+
+/** OpenAPI document (also exported to docs/openapi.json by scripts/export-openapi.ts). */
+export function buildOpenApiDocument(app: INestApplication) {
+  return SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('DEWA API')
+      .setDescription(
+        'Bilingual (ar/fr) healthcare marketplace API. Every response uses the envelope ' +
+          '`{ success, data, error: { code, message_key, message, details }, meta: { request_id, pagination } }`. ' +
+          'Send `Accept-Language: ar` or `fr` to localise `error.message`. Full guides: /docs/api/*.md in the repo.',
+      )
+      .setVersion('0.2.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+      .addGlobalParameters({
+        name: 'Accept-Language',
+        in: 'header',
+        required: false,
+        schema: { type: 'string', enum: ['fr', 'ar'], default: 'fr' },
+      })
+      .build(),
+  );
 }

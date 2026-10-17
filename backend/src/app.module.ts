@@ -27,6 +27,8 @@ import { OffersModule } from './modules/offers/offers.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
+import { ObservabilityController } from './modules/health/observability.controller';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { SupportModule } from './modules/support/support.module';
 import { GeoModule } from './modules/geo/geo.module';
@@ -85,6 +87,7 @@ import { PermissionsGuard } from './common/auth/permissions.guard';
     OrdersModule,
     PaymentsModule,
     DeliveryModule,
+    PrivacyModule,
     SupportModule,
     PatientsModule,
     RequestsModule,
@@ -93,7 +96,7 @@ import { PermissionsGuard } from './common/auth/permissions.guard';
     PharmaciesModule,
     AdminModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ObservabilityController],
   providers: [
     // Order matters: rate limit → authenticate → account status → role.
     { provide: APP_GUARD, useClass: AppThrottlerGuard },

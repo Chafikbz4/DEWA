@@ -25,7 +25,13 @@
     "db:seed": "tsx src/database/seeds/seed.ts",
     "docs:db": "tsx scripts/generate-db-docs.ts",
     "docs:errors": "tsx scripts/generate-error-docs.ts",
-    "docs": "npm run docs:db && npm run docs:errors"
+    "docs": "npm run docs:db && npm run docs:errors",
+    "db:seed:demo": "tsx src/database/seeds/seed-demo.ts",
+    "crypto:rotate": "tsx scripts/rotate-keys.ts",
+    "docs:openapi": "ts-node --transpile-only scripts/export-openapi.ts",
+    "docs:handoff": "tsx scripts/generate-handoff.ts",
+    "demo": "tsx scripts/demo-walkthrough.ts",
+    "setup:local": "node scripts/setup-local.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",

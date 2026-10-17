@@ -209,6 +209,8 @@ export const ERROR_CODES = {
   SETTING_VALUE_INVALID: HttpStatus.BAD_REQUEST,
   NOTIFICATION_TEMPLATE_NOT_FOUND: HttpStatus.NOT_FOUND,
   NOTIFICATION_TEMPLATE_INVALID: HttpStatus.BAD_REQUEST,
+  DATA_EXPORT_TOO_FREQUENT: HttpStatus.TOO_MANY_REQUESTS,
+  ACCOUNT_DELETION_BLOCKED: HttpStatus.CONFLICT,
 } as const satisfies Record<string, HttpStatus>;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

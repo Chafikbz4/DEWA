@@ -190,7 +190,9 @@
     "SETTING_NOT_FOUND": "Paramètre inconnu.",
     "SETTING_VALUE_INVALID": "Valeur de paramètre invalide.",
     "NOTIFICATION_TEMPLATE_NOT_FOUND": "Modèle de notification introuvable.",
-    "NOTIFICATION_TEMPLATE_INVALID": "Le modèle utilise des variables non autorisées."
+    "NOTIFICATION_TEMPLATE_INVALID": "Le modèle utilise des variables non autorisées.",
+    "DATA_EXPORT_TOO_FREQUENT": "Export déjà demandé récemment. Réessayez dans quelques minutes.",
+    "ACCOUNT_DELETION_BLOCKED": "Suppression impossible : une commande est en cours."
   },
   "validation": {
     "default": "Valeur invalide.",

@@ -746,11 +746,19 @@ export class OrdersService {
 
   // -------------------------------------------------------------- timeline
 
-  async timeline(user: AuthUser, id: string, ph?: PharmacyContext) {
+  /** Labels follow Accept-Language when sent, otherwise the account's language. */
+  async timeline(
+    user: AuthUser,
+    id: string,
+    ph?: PharmacyContext,
+    acceptLanguage?: string,
+  ) {
     const o = ph
       ? await this.loadForPharmacy(ph, id)
       : await this.loadForPatient(user, id);
-    const lang = user.preferredLanguage as Lang;
+    const lang = acceptLanguage
+      ? this.i18n.resolveLang(acceptLanguage)
+      : (user.preferredLanguage as Lang);
     const rows = await this.db
       .select()
       .from(orderStatusHistory)

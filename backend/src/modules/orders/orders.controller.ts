@@ -133,8 +133,9 @@ export class PatientOrdersController {
   timeline(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('accept-language') lang?: string,
   ) {
-    return this.orders.timeline(user, id);
+    return this.orders.timeline(user, id, undefined, lang);
   }
 
   @Post('orders/:id/cancel')
@@ -216,8 +217,9 @@ export class PharmacyOrdersController {
     @CurrentUser() user: AuthUser,
     @CurrentPharmacy() ph: PharmacyContext,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('accept-language') lang?: string,
   ) {
-    return this.orders.timeline(user, id, ph);
+    return this.orders.timeline(user, id, ph, lang);
   }
 
   @Post(':id/validate')

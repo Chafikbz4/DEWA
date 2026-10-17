@@ -41,6 +41,11 @@ export class JobQueueService implements OnModuleDestroy {
     this.redisUrl = config.get<string>('REDIS_URL') || undefined;
   }
 
+  /** Which backend runs jobs (reported by /ready). */
+  get backend(): 'bullmq' | 'in-process' {
+    return this.redisUrl ? 'bullmq' : 'in-process';
+  }
+
   register(name: string, handler: Handler, opts: JobOptions = {}) {
     const full = {
       attempts: opts.attempts ?? 5,

@@ -179,6 +179,20 @@ export class EnvironmentVariables {
   @Matches(/^https?:\/\//)
   PUBLIC_BASE_URL = 'http://localhost:3000';
 
+  // ---- Observability ----
+  /** json = structured JSON lines (production); pretty = Nest console (development). Both are redacted. */
+  @IsIn(['json', 'pretty'])
+  LOG_FORMAT: 'json' | 'pretty' = 'pretty';
+
+  @IsIn(['error', 'warn', 'log', 'debug', 'verbose'])
+  LOG_LEVEL: 'error' | 'warn' | 'log' | 'debug' | 'verbose' = 'log';
+
+  /** Bearer token for GET /metrics; the endpoint answers 404 when unset. */
+  @IsOptional()
+  @IsString()
+  @MinLength(24)
+  METRICS_TOKEN?: string;
+
   // ---- Payments ----
   /** mock = MockPaymentProvider (dev/tests); satim = SATIM/Edahabia skeleton (not implemented). */
   @IsIn(['mock', 'satim'])

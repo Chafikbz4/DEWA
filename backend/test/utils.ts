@@ -80,8 +80,9 @@ function assertTestDatabase() {
 const rand = (digits: number) =>
   Array.from({ length: digits }, () => Math.floor(Math.random() * 10)).join('');
 
-/** Unique valid Algerian mobile number (Mobilis 66x range). */
-export const uniquePhone = () => `+213661${rand(6)}`;
+/** Unique valid Algerian mobile number (065x / 066x / 069x – valid for libphonenumber). 3×10^7 values: a smaller space collides with accounts left by earlier runs in the shared test DB. */
+export const uniquePhone = () =>
+  `+2136${'569'[Math.floor(Math.random() * 3)]}${rand(7)}`;
 export const uniqueEmail = () => `e2e.${Date.now()}.${rand(5)}@test.dewa.dz`;
 
 export function lastOtp(ctx: TestCtx, target: string): string {

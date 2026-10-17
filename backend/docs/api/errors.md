@@ -198,3 +198,5 @@ Every error response has `error.code` (stable, switch on it), `error.message_key
 | `SETTING_VALUE_INVALID` | 400 | Valeur de paramètre invalide. | قيمة الإعداد غير صالحة. |
 | `NOTIFICATION_TEMPLATE_NOT_FOUND` | 404 | Modèle de notification introuvable. | نموذج الإشعار غير موجود. |
 | `NOTIFICATION_TEMPLATE_INVALID` | 400 | Le modèle utilise des variables non autorisées. | يستخدم النموذج متغيرات غير مسموح بها. |
+| `DATA_EXPORT_TOO_FREQUENT` | 429 | Export déjà demandé récemment. Réessayez dans quelques minutes. | تم طلب التصدير مؤخراً. حاول بعد بضع دقائق. |
+| `ACCOUNT_DELETION_BLOCKED` | 409 | Suppression impossible : une commande est en cours. | لا يمكن الحذف: هناك طلب قيد التنفيذ. |

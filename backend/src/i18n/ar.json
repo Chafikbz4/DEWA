@@ -190,7 +190,9 @@
     "SETTING_NOT_FOUND": "إعداد غير معروف.",
     "SETTING_VALUE_INVALID": "قيمة الإعداد غير صالحة.",
     "NOTIFICATION_TEMPLATE_NOT_FOUND": "نموذج الإشعار غير موجود.",
-    "NOTIFICATION_TEMPLATE_INVALID": "يستخدم النموذج متغيرات غير مسموح بها."
+    "NOTIFICATION_TEMPLATE_INVALID": "يستخدم النموذج متغيرات غير مسموح بها.",
+    "DATA_EXPORT_TOO_FREQUENT": "تم طلب التصدير مؤخراً. حاول بعد بضع دقائق.",
+    "ACCOUNT_DELETION_BLOCKED": "لا يمكن الحذف: هناك طلب قيد التنفيذ."
   },
   "validation": {
     "default": "قيمة غير صالحة.",
