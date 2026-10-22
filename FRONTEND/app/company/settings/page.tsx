@@ -1,0 +1,2 @@
+import { WorkspacePage } from "@/components/role-pages";
+export default function CompanySettings() { return <WorkspacePage role="company" title="Company settings" eyebrow="DELIVERY COMPANY" description="Manage company verification, documents and delivery operations." actions={[{ label: "Company profile" }, { label: "Upload documents" }, { label: "Invite a driver", href: "/company/invitations" }]} />; }
