@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-label="Medicine bottle">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff6e8"/>
+      <stop offset="1" stop-color="#fbe9cb"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" fill="url(#bg)"/>
+  <circle cx="60" cy="190" r="50" fill="#fff" opacity=".5"/>
+  <circle cx="264" cy="54" r="40" fill="#fff" opacity=".55"/>
+  <g transform="translate(118 48)">
+    <rect x="20" y="6" width="44" height="22" rx="5" fill="#d9a441"/>
+    <rect x="6" y="26" width="72" height="126" rx="14" fill="#fff"/>
+    <rect x="6" y="26" width="72" height="126" rx="14" fill="none" stroke="#e7c489" stroke-width="3"/>
+    <rect x="17" y="58" width="50" height="38" rx="6" fill="#fdf1dc"/>
+    <rect x="26" y="70" width="32" height="6" rx="3" fill="#d9a441" opacity=".8"/>
+    <rect x="26" y="81" width="22" height="5" rx="2.5" fill="#e7c489"/>
+    <circle cx="42" cy="124" r="12" fill="#fbe9cb"/>
+    <path d="M42 118v12M36 124h12" stroke="#d9a441" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

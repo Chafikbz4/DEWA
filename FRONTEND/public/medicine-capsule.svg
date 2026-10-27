@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-label="Medicine capsule">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3effd"/>
+      <stop offset="1" stop-color="#e3dbf8"/>
+    </linearGradient>
+    <linearGradient id="cap" x1="0" y1="1" x2="1" y2="0">
+      <stop offset=".5" stop-color="#8875bd"/>
+      <stop offset=".5" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" fill="url(#bg)"/>
+  <circle cx="260" cy="190" r="54" fill="#fff" opacity=".5"/>
+  <circle cx="52" cy="54" r="42" fill="#fff" opacity=".55"/>
+  <g transform="rotate(-38 160 120)">
+    <rect x="76" y="96" width="168" height="48" rx="24" fill="url(#cap)"/>
+    <rect x="76" y="96" width="168" height="48" rx="24" fill="none" stroke="#8875bd" stroke-opacity=".35" stroke-width="3"/>
+    <rect x="122" y="106" width="6" height="28" rx="3" fill="#fff" opacity=".55"/>
+    <rect x="140" y="106" width="6" height="28" rx="3" fill="#fff" opacity=".4"/>
+  </g>
+</svg>

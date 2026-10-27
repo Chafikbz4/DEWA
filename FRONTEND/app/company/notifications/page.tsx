@@ -1,5 +1,5 @@
-import PatientNotifications from "@/app/patient/notifications/page";
+import { NotificationsPage } from "@/components/notification-feed";
 
-export default function CompanyNotifications() {
-  return <PatientNotifications role="company" />;
+export default function Notifications() {
+  return <NotificationsPage role="company" />;
 }

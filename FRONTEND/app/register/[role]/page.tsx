@@ -1,5 +1,7 @@
 import RegisterForm from "@/components/register-form";
 
+export const instant = false;
+
 export function generateStaticParams() {
   return [{ role: "patient" }, { role: "pharmacist" }, { role: "driver" }, { role: "company" }];
 }

@@ -1,2 +1,5 @@
-import { PharmacyPage } from "@/components/role-pages";
-export default function PharmacyStock() { return <PharmacyPage view="stock" />; }
+import { PharmacyStockPage } from "@/components/pharmacy-stock";
+
+export default function PharmacyStock() {
+  return <PharmacyStockPage />;
+}
