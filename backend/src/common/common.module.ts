@@ -8,6 +8,7 @@ import {
   ConsoleEmailProvider,
   ConsoleSmsProvider,
   EMAIL_PROVIDER,
+  SmtpEmailProvider,
   SMS_PROVIDER,
 } from '../modules/messaging-providers/providers';
 import { ConfigService } from '@nestjs/config';
@@ -43,7 +44,14 @@ import { PermissionsService } from './auth/permissions.guard';
     PermissionsService,
     // Swap these for real providers via env (SMS_PROVIDER / EMAIL_PROVIDER).
     { provide: SMS_PROVIDER, useClass: ConsoleSmsProvider },
-    { provide: EMAIL_PROVIDER, useClass: ConsoleEmailProvider },
+    {
+      provide: EMAIL_PROVIDER,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        config.get<string>('EMAIL_PROVIDER', 'console') === 'smtp'
+          ? new SmtpEmailProvider(config)
+          : new ConsoleEmailProvider(),
+    },
   ],
   exports: [
     AccessTokenVerifier,

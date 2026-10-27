@@ -23,7 +23,10 @@ import { PaginationQueryDto } from '../../../common/http/pagination.dto';
 import {
   chifaVerificationStatusEnum,
   fileQualityStatusEnum,
+  fulfillmentTypeEnum,
+  paymentMethodEnum,
   recipientStatusEnum,
+  requestFulfillmentStatusEnum,
   requestItemSourceEnum,
   requestStatusEnum,
   requestTypeEnum,
@@ -276,6 +279,33 @@ export class CoverageDto {
   status!: string;
 }
 
+export class RequestCheckoutDto {
+  @ApiProperty({
+    enum: fulfillmentTypeEnum.enumValues,
+    description: 'How the patient wants to receive the order',
+  })
+  @IsEnum(fulfillmentTypeEnum.enumValues)
+  fulfillment_type!: 'DELIVERY' | 'PICKUP';
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    nullable: true,
+    description:
+      'Chosen delivery company. Omit or null to let DEWA assign the nearest verified partner.',
+  })
+  @IsOptional()
+  @IsUUID()
+  delivery_company_id?: string | null;
+
+  @ApiProperty({
+    enum: paymentMethodEnum.enumValues,
+    description:
+      'ON_DELIVERY, CCP or BARIDIMOB. Online methods are saved without charging.',
+  })
+  @IsEnum(paymentMethodEnum.enumValues)
+  payment_method!: 'ON_DELIVERY' | 'CCP' | 'BARIDIMOB';
+}
+
 export class RequestFileDto {
   @ApiProperty({ format: 'uuid' }) file_id!: string;
   @ApiProperty({ example: 1 }) page_order!: number;
@@ -308,6 +338,34 @@ export class RecipientDto {
   @ApiProperty() sent_at!: Date;
   @ApiPropertyOptional({ nullable: true }) viewed_at!: Date | null;
   @ApiPropertyOptional({ nullable: true }) responded_at!: Date | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 185000,
+    description: 'Amount the patient must pay, quoted on acceptance (centimes)',
+  })
+  quoted_amount_centimes!: number | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: fulfillmentTypeEnum.enumValues,
+  })
+  fulfillment_type!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  delivery_company_name!: string | null;
+  @ApiPropertyOptional({ nullable: true, enum: paymentMethodEnum.enumValues })
+  payment_method!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  payment_status!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  paid_at!: Date | null;
+  @ApiPropertyOptional({ nullable: true })
+  checkout_completed_at!: Date | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: requestFulfillmentStatusEnum.enumValues,
+  })
+  fulfillment_status!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  fulfillment_updated_at!: Date | null;
 }
 
 export class OffersSummaryDto {
@@ -329,8 +387,49 @@ export class RequestSummaryDto {
   @ApiProperty({ enum: requestUrgencyEnum.enumValues }) urgency!: string;
   @ApiProperty() delivery_wanted!: boolean;
   @ApiPropertyOptional({ nullable: true }) dependant_first_name!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  wilaya_name_fr!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  wilaya_name_ar!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  commune_name_fr!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  commune_name_ar!: string | null;
   @ApiProperty() recipients_count!: number;
   @ApiProperty() offers_count!: number;
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 185000,
+    description:
+      'Amount to pay quoted by the pharmacy that accepted the request (centimes)',
+  })
+  accepted_amount_centimes!: number | null;
+  @ApiPropertyOptional({ nullable: true })
+  accepted_pharmacy_name_fr!: string | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: fulfillmentTypeEnum.enumValues,
+  })
+  fulfillment_type!: string | null;
+  @ApiPropertyOptional({ nullable: true, format: 'uuid' })
+  delivery_company_id!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  delivery_company_name!: string | null;
+  @ApiPropertyOptional({ nullable: true, enum: paymentMethodEnum.enumValues })
+  payment_method!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  payment_status!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  paid_at!: Date | null;
+  @ApiPropertyOptional({ nullable: true })
+  checkout_completed_at!: Date | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: requestFulfillmentStatusEnum.enumValues,
+  })
+  fulfillment_status!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  fulfillment_updated_at!: Date | null;
   @ApiPropertyOptional({ nullable: true }) expires_at!: Date | null;
   @ApiProperty() created_at!: Date;
 }

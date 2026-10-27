@@ -143,8 +143,31 @@ export class EnvironmentVariables {
   @IsEnum(['console'])
   SMS_PROVIDER = 'console' as const;
 
-  @IsEnum(['console'])
-  EMAIL_PROVIDER = 'console' as const;
+  @IsEnum(['console', 'smtp'])
+  EMAIL_PROVIDER: 'console' | 'smtp' = 'console';
+
+  @IsOptional()
+  @IsString()
+  SMTP_HOST?: string;
+
+  @Transform(toInt)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  SMTP_PORT?: number;
+
+  @IsOptional()
+  @IsString()
+  SMTP_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  SMTP_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  EMAIL_FROM?: string;
 
   @Transform(toInt)
   @IsInt()
@@ -278,6 +301,17 @@ export function validateEnv(config: Record<string, unknown>) {
       throw new Error(
         'Console SMS/email providers are not allowed in production. Configure a real provider.',
       );
+    }
+  }
+  if (env.EMAIL_PROVIDER === 'smtp') {
+    const missing = [
+      'SMTP_HOST',
+      'SMTP_PORT',
+      'SMTP_USER',
+      'SMTP_PASSWORD',
+    ].filter((key) => !config[key]);
+    if (missing.length) {
+      throw new Error(`SMTP email provider requires: ${missing.join(', ')}`);
     }
   }
   return env;

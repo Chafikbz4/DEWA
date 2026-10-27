@@ -27,7 +27,13 @@ import {
   MyPharmacy,
 } from '../../common/auth/pharmacy-access.guard';
 import { ApiErrors } from '../../common/swagger/api-responses';
-import { ClarificationDto, DeclineDto, InboxQueryDto } from './dto/inbox.dto';
+import {
+  AcceptInterestDto,
+  ClarificationDto,
+  DeclineDto,
+  InboxQueryDto,
+  UpdateFulfillmentDto,
+} from './dto/inbox.dto';
 import { InboxService } from './inbox.service';
 
 const COMMON = [
@@ -81,18 +87,45 @@ export class InboxController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @MyPharmacy()
   @ApiOperation({
-    summary: 'Signal interest (all staff)',
+    summary: 'Accept the request (all staff)',
     description:
-      'Recipient → INTERESTED. Does NOT authorize dispensing, does NOT create an order or an offer.',
+      'Recipient → ACCEPTED and request → ACCEPTED. The first pharmacy to accept wins. ' +
+      'The quoted amount becomes the price the patient must pay.',
   })
   @ApiErrors('REQUEST_NOT_FOUND', 'RECIPIENT_CLOSED', ...COMMON)
   interest(
     @CurrentUser() user: AuthUser,
     @CurrentPharmacy() ph: PharmacyContext,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: AcceptInterestDto,
     @ReqMeta() meta: RequestMeta,
   ) {
-    return this.inbox.acceptInterest(user, ph, id, meta);
+    return this.inbox.acceptInterest(user, ph, id, dto.amount_centimes, meta);
+  }
+
+  @Post(':id/fulfillment')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @MyPharmacy()
+  @ApiOperation({
+    summary: 'Update the request fulfillment progress (all staff)',
+    description:
+      'After the patient completed checkout: PREPARING/READY are progress markers, HANDED_TO_DELIVERY tells the patient the parcel is with the delivery company, DELIVERED closes a delivery, PICKED_UP records a patient pickup.',
+  })
+  @ApiErrors(
+    'REQUEST_NOT_FOUND',
+    'RECIPIENT_CLOSED',
+    'REQUEST_NOT_EDITABLE',
+    ...COMMON,
+  )
+  fulfillment(
+    @CurrentUser() user: AuthUser,
+    @CurrentPharmacy() ph: PharmacyContext,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateFulfillmentDto,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.inbox.updateFulfillment(user, ph, id, dto.status, meta);
   }
 
   @Post(':id/decline')

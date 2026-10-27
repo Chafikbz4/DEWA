@@ -31,6 +31,7 @@ import {
   MatchingPreviewDto,
   MatchingPreviewResponseDto,
   RequestDetailDto,
+  RequestCheckoutDto,
   RequestItemInputDto,
   RequestsQueryDto,
   RequestSummaryDto,
@@ -74,8 +75,9 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Submit a request (PRESCRIPTION, CHIFA or PRODUCT)',
     description:
-      'Creates the request (reference RX-YYYY-NNNNNN), the share-consent record and one recipient per matched pharmacy, then ' +
-      'moves it to AWAITING_PHARMACY_RESPONSE. Rejects restricted medicine categories (REQUEST_CATEGORY_RESTRICTED). ' +
+      'Creates the request (reference RX-YYYY-NNNNNN), the share-consent record and recipients for currently eligible pharmacies, then ' +
+      'moves it to AWAITING_PHARMACY_RESPONSE. A request is saved even when no pharmacy is currently matched. ' +
+      'Rejects restricted medicine categories (REQUEST_CATEGORY_RESTRICTED). ' +
       'CHIFA data is stored but coverage is NOT verified unless an official CNAS integration exists. OCR (if enabled) adds ' +
       'advisory items later (source=OCR).',
   })
@@ -153,6 +155,31 @@ export class RequestsController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.requests.cancel(user, id, dto.reason, meta);
+  }
+
+  @Post(':id/checkout')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Save the patient checkout choice',
+    description:
+      'Stores fulfillment (pickup/delivery), optional delivery company and payment method for the pharmacy that accepted the request. Online methods (CCP/BaridiMob) are saved without charging.',
+  })
+  @ApiErrors(
+    'REQUEST_NOT_FOUND',
+    'REQUEST_NOT_EDITABLE',
+    'RECIPIENT_CLOSED',
+    'DELIVERY_COMPANY_NOT_FOUND',
+    'DELIVERY_COMPANY_NOT_VERIFIED',
+    ...AUTH,
+  )
+  checkout(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: RequestCheckoutDto,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.requests.saveCheckout(user, id, dto, meta);
   }
 
   @Post(':id/items')

@@ -35,6 +35,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { SensitiveAccessService } from '../audit/sensitive-access.service';
 import { ConversationsService } from '../messaging/conversations.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { RequestLifecycleService } from '../requests/request-lifecycle.service';
 import { InboxQueryDto } from './dto/inbox.dto';
 
@@ -43,7 +44,7 @@ type RecipientStatus = (typeof requestRecipients.$inferSelect)['status'];
 export const ACTIVE_RECIPIENT: RecipientStatus[] = [
   'SENT',
   'VIEWED',
-  'INTERESTED',
+  'ACCEPTED',
   'CLARIFICATION_ASKED',
   'OFFERED',
 ];
@@ -63,9 +64,16 @@ export class InboxService {
     private readonly sensitive: SensitiveAccessService,
     private readonly crypto: CryptoService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(ph: PharmacyContext, q: InboxQueryDto) {
+    const [pharmacy] = await this.db
+      .select({ wilayaId: pharmacies.wilayaId })
+      .from(pharmacies)
+      .where(eq(pharmacies.id, ph.id))
+      .limit(1);
+    if (!pharmacy) throw new AppException('REQUEST_NOT_FOUND');
     const conditions: SQL[] = [eq(requestRecipients.pharmacyId, ph.id)];
     if (q.recipient_status?.length)
       conditions.push(inArray(requestRecipients.status, q.recipient_status));
@@ -79,39 +87,105 @@ export class InboxService {
     const sortCol =
       q.sort === 'expires_at' ? requests.expiresAt : requestRecipients.sentAt;
 
-    const [rows, [{ total }]] = await Promise.all([
-      this.db
-        .select({
-          rr: requestRecipients,
-          r: requests,
-          patientFirstName: patientProfiles.firstName,
-          itemsCount: sql<number>`(SELECT count(*)::int FROM ${requestItems} i WHERE i.request_id = ${requests.id})`,
-          filesCount: sql<number>`(SELECT count(*)::int FROM ${requestFiles} f WHERE f.request_id = ${requests.id})`,
-          myOffer: sql<
-            string | null
-          >`(SELECT o.status::text FROM ${offers} o WHERE o.request_id = ${requests.id} AND o.pharmacy_id = ${ph.id} ORDER BY o.created_at DESC LIMIT 1)`,
-        })
-        .from(requestRecipients)
-        .innerJoin(requests, eq(requests.id, requestRecipients.requestId))
-        .leftJoin(
-          patientProfiles,
-          eq(patientProfiles.userId, requests.patientUserId),
-        )
-        .where(where)
-        .orderBy(
-          desc(sql`(${requests.urgency} = 'URGENT')`),
-          q.order === 'asc' ? asc(sortCol) : desc(sortCol),
-        )
-        .limit(q.limit)
-        .offset(q.offset),
-      this.db
-        .select({ total: count() })
-        .from(requestRecipients)
-        .innerJoin(requests, eq(requests.id, requestRecipients.requestId))
-        .where(where),
-    ]);
+    const [rows, unassignedRows, [{ total }], [{ unassignedTotal }]] =
+      await Promise.all([
+        this.db
+          .select({
+            rr: requestRecipients,
+            r: requests,
+            patientFirstName: patientProfiles.firstName,
+            itemsCount: sql<number>`(SELECT count(*)::int FROM ${requestItems} i WHERE i.request_id = ${requests.id})`,
+            filesCount: sql<number>`(SELECT count(*)::int FROM ${requestFiles} f WHERE f.request_id = ${requests.id})`,
+            myOffer: sql<
+              string | null
+            >`(SELECT o.status::text FROM ${offers} o WHERE o.request_id = ${requests.id} AND o.pharmacy_id = ${ph.id} ORDER BY o.created_at DESC LIMIT 1)`,
+          })
+          .from(requestRecipients)
+          .innerJoin(requests, eq(requests.id, requestRecipients.requestId))
+          .leftJoin(
+            patientProfiles,
+            eq(patientProfiles.userId, requests.patientUserId),
+          )
+          .where(where)
+          .orderBy(
+            desc(sql`(${requests.urgency} = 'URGENT')`),
+            q.order === 'asc' ? asc(sortCol) : desc(sortCol),
+          )
+          .limit(q.limit)
+          .offset(q.offset),
+        this.db
+          .select({
+            r: requests,
+            patientFirstName: patientProfiles.firstName,
+            itemsCount: sql<number>`(SELECT count(*)::int FROM ${requestItems} i WHERE i.request_id = ${requests.id})`,
+            filesCount: sql<number>`(SELECT count(*)::int FROM ${requestFiles} f WHERE f.request_id = ${requests.id})`,
+            myOffer: sql<string | null>`NULL::text`,
+          })
+          .from(requests)
+          .leftJoin(
+            patientProfiles,
+            eq(patientProfiles.userId, requests.patientUserId),
+          )
+          .where(
+            and(
+              eq(requests.status, 'AWAITING_PHARMACY_RESPONSE'),
+              sql`${requests.deliveryAddressSnapshot}->>'wilaya_id' = ${String(pharmacy.wilayaId)}`,
+              sql`NOT EXISTS (
+              SELECT 1 FROM ${requestRecipients} rr
+              WHERE rr.request_id = ${requests.id}
+                AND rr.pharmacy_id = ${ph.id}
+            )`,
+              ...(q.urgency ? [eq(requests.urgency, q.urgency)] : []),
+            ),
+          )
+          .orderBy(
+            desc(sql`(${requests.urgency} = 'URGENT')`),
+            desc(requests.createdAt),
+          )
+          .limit(q.limit + q.offset),
+        this.db
+          .select({ total: count() })
+          .from(requestRecipients)
+          .innerJoin(requests, eq(requests.id, requestRecipients.requestId))
+          .where(where),
+        this.db
+          .select({ unassignedTotal: count() })
+          .from(requests)
+          .where(
+            and(
+              eq(requests.status, 'AWAITING_PHARMACY_RESPONSE'),
+              sql`${requests.deliveryAddressSnapshot}->>'wilaya_id' = ${String(pharmacy.wilayaId)}`,
+              sql`NOT EXISTS (
+              SELECT 1 FROM ${requestRecipients} rr
+              WHERE rr.request_id = ${requests.id}
+                AND rr.pharmacy_id = ${ph.id}
+            )`,
+            ),
+          ),
+      ]);
+    const allRows = [
+      ...rows.map((row) => ({
+        ...row,
+        rr: row.rr,
+        sentAt: row.rr.sentAt,
+        viewedAt: row.rr.viewedAt,
+        recipientStatus: row.rr.status,
+      })),
+      ...unassignedRows.map((row) => ({
+        ...row,
+        rr: null,
+        sentAt: row.r.createdAt,
+        viewedAt: null,
+        recipientStatus: 'SENT' as const,
+      })),
+    ].sort((a, b) => {
+      const urgent =
+        Number(b.r.urgency === 'URGENT') - Number(a.r.urgency === 'URGENT');
+      return urgent || b.sentAt.getTime() - a.sentAt.getTime();
+    });
+    const pageRows = allRows.slice(q.offset, q.offset + q.limit);
     return Paginated.of(
-      rows.map((row) => {
+      pageRows.map((row) => {
         const area = (row.r.deliveryAddressSnapshot ?? {}) as Record<
           string,
           unknown
@@ -122,7 +196,7 @@ export class InboxService {
           request_type: row.r.requestType,
           urgency: row.r.urgency,
           request_status: row.r.status,
-          recipient_status: row.rr.status,
+          recipient_status: row.recipientStatus,
           delivery_wanted: row.r.deliveryWanted,
           patient_first_name: row.patientFirstName,
           commune_name_fr: (area.commune_name_fr as string) ?? null,
@@ -130,12 +204,22 @@ export class InboxService {
           items_count: Number(row.itemsCount),
           files_count: Number(row.filesCount),
           my_offer_status: row.myOffer,
-          sent_at: row.rr.sentAt,
-          viewed_at: row.rr.viewedAt,
+          sent_at: row.sentAt,
+          viewed_at: row.viewedAt,
           expires_at: row.r.expiresAt,
+          accepted_amount_centimes: row.rr?.quotedAmountCentimes ?? null,
+          fulfillment_type: row.rr?.fulfillmentType ?? null,
+          delivery_company_id: row.rr?.deliveryCompanyId ?? null,
+          delivery_company_name: row.rr?.deliveryCompanyName ?? null,
+          payment_method: row.rr?.paymentMethod ?? null,
+          payment_status: row.rr?.paymentStatus ?? null,
+          paid_at: row.rr?.paidAt ?? null,
+          checkout_completed_at: row.rr?.checkoutCompletedAt ?? null,
+          fulfillment_status: row.rr?.fulfillmentStatus ?? null,
+          fulfillment_updated_at: row.rr?.fulfillmentUpdatedAt ?? null,
         };
       }),
-      total,
+      Number(total) + Number(unassignedTotal),
       q.page,
       q.limit,
     );
@@ -157,7 +241,54 @@ export class InboxService {
         ),
       )
       .limit(1);
-    if (!row) throw new AppException('REQUEST_NOT_FOUND');
+    if (!row) {
+      const [pharmacy] = await tx
+        .select({ wilayaId: pharmacies.wilayaId })
+        .from(pharmacies)
+        .where(eq(pharmacies.id, ph.id))
+        .limit(1);
+      const [request] = await tx
+        .select()
+        .from(requests)
+        .where(eq(requests.id, requestId))
+        .limit(1);
+      const area = (request?.deliveryAddressSnapshot ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (
+        !pharmacy ||
+        !request ||
+        request.status !== 'AWAITING_PHARMACY_RESPONSE' ||
+        String(area.wilaya_id) !== String(pharmacy.wilayaId)
+      )
+        throw new AppException('REQUEST_NOT_FOUND');
+      const [recipient] = await tx
+        .insert(requestRecipients)
+        .values({
+          requestId,
+          pharmacyId: ph.id,
+          status: 'SENT',
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (!recipient) {
+        const [existing] = await tx
+          .select({ rr: requestRecipients, r: requests })
+          .from(requestRecipients)
+          .innerJoin(requests, eq(requests.id, requestRecipients.requestId))
+          .where(
+            and(
+              eq(requestRecipients.requestId, requestId),
+              eq(requestRecipients.pharmacyId, ph.id),
+            ),
+          )
+          .limit(1);
+        if (!existing) throw new AppException('REQUEST_NOT_FOUND');
+        return existing;
+      }
+      return { rr: recipient, r: request };
+    }
     return row;
   }
 
@@ -273,6 +404,16 @@ export class InboxService {
       urgency: r.urgency,
       request_status: r.status,
       recipient_status: rr.status,
+      quoted_amount_centimes: rr.quotedAmountCentimes,
+      fulfillment_type: rr.fulfillmentType,
+      delivery_company_id: rr.deliveryCompanyId,
+      delivery_company_name: rr.deliveryCompanyName,
+      payment_method: rr.paymentMethod,
+      payment_status: rr.paymentStatus,
+      paid_at: rr.paidAt,
+      checkout_completed_at: rr.checkoutCompletedAt,
+      fulfillment_status: rr.fulfillmentStatus,
+      fulfillment_updated_at: rr.fulfillmentUpdatedAt,
       delivery_wanted: r.deliveryWanted,
       sent_at: rr.sentAt,
       viewed_at: rr.viewedAt,
@@ -347,41 +488,245 @@ export class InboxService {
     }
   }
 
-  /** Signals interest. Does NOT authorize dispensing and does NOT create an order. */
+  /** Accepts the request for this pharmacy; the first pharmacy to claim wins. */
   async acceptInterest(
     user: AuthUser,
     ph: PharmacyContext,
     requestId: string,
+    amountCentimes: number,
     meta: RequestMeta,
   ) {
     const { rr, r } = await this.recipientOf(ph, requestId);
     this.assertActionable(rr, r);
-    if (rr.status === 'SENT' || rr.status === 'VIEWED') {
-      await this.db
+    if (rr.status !== 'SENT' && rr.status !== 'VIEWED')
+      return {
+        request_id: r.id,
+        recipient_status: rr.status,
+        quoted_amount_centimes: rr.quotedAmountCentimes,
+      };
+
+    const now = new Date();
+    const claimed = await this.uow.run(async (ctx) => {
+      const { tx } = ctx;
+      // The request row is the shared claim boundary. The NOT EXISTS guard
+      // makes simultaneous pharmacy clicks resolve to one winner.
+      const updated = await tx
         .update(requestRecipients)
         .set({
-          status: 'INTERESTED',
-          viewedAt: rr.viewedAt ?? new Date(),
-          respondedAt: rr.respondedAt ?? new Date(),
+          status: 'ACCEPTED',
+          quotedAmountCentimes: amountCentimes,
+          viewedAt: rr.viewedAt ?? now,
+          respondedAt: now,
         })
-        .where(eq(requestRecipients.id, rr.id));
-      await this.refreshResponseTime(this.db, ph.id);
-    }
+        .where(
+          and(
+            eq(requestRecipients.id, rr.id),
+            inArray(requestRecipients.status, ['SENT', 'VIEWED']),
+            eq(
+              sql`(SELECT status FROM requests WHERE id = ${r.id})`,
+              'AWAITING_PHARMACY_RESPONSE',
+            ),
+            sql`NOT EXISTS (
+              SELECT 1 FROM request_recipients other
+              WHERE other.request_id = ${r.id}
+                AND other.status = 'ACCEPTED'
+            )`,
+          ),
+        )
+        .returning({ id: requestRecipients.id });
+      if (!updated.length) return false;
+
+      const [request] = await tx
+        .select()
+        .from(requests)
+        .where(eq(requests.id, r.id))
+        .limit(1);
+      if (!request) return false;
+      const transitioned = await this.lifecycle.transition(
+        ctx,
+        request,
+        'ACCEPTED',
+        { userId: user.id, role: user.role, reason: 'Accepted by pharmacy' },
+      );
+      if (!transitioned) return false;
+
+      // Once claimed, other pharmacies must no longer be able to act on it.
+      await tx
+        .update(requestRecipients)
+        .set({ status: 'EXPIRED', respondedAt: now })
+        .where(
+          and(
+            eq(requestRecipients.requestId, r.id),
+            sql`${requestRecipients.id} <> ${rr.id}`,
+            inArray(requestRecipients.status, [
+              'SENT',
+              'VIEWED',
+              'CLARIFICATION_ASKED',
+            ]),
+          ),
+        );
+      return true;
+    });
+    if (!claimed)
+      throw new AppException('RECIPIENT_CLOSED', {
+        recipient_status: rr.status,
+        request_status: r.status,
+      });
+    await this.refreshResponseTime(this.db, ph.id);
     await this.audit.log({
-      action: 'PHARMACY_REQUEST_INTEREST',
+      action: 'PHARMACY_REQUEST_ACCEPTED',
       actorUserId: user.id,
       actorRole: user.role,
       resourceType: 'request',
       resourceId: r.id,
       ip: meta.ip,
       userAgent: meta.userAgent,
+      metadata: { amount_centimes: amountCentimes },
     });
     return {
       request_id: r.id,
-      recipient_status:
-        rr.status === 'SENT' || rr.status === 'VIEWED'
-          ? 'INTERESTED'
-          : rr.status,
+      recipient_status: 'ACCEPTED',
+      quoted_amount_centimes: amountCentimes,
+    };
+  }
+
+  /**
+   * Pharmacy confirms what happens next for the patient: hand the parcel to
+   * the delivery company, mark a delivery as done, or mark a pickup as
+   * collected. Order-backed requests keep their own state machine; these
+   * statuses mirror the operational steps for the request flow.
+   */
+  async updateFulfillment(
+    user: AuthUser,
+    ph: PharmacyContext,
+    requestId: string,
+    status:
+      'PREPARING' | 'READY' | 'HANDED_TO_DELIVERY' | 'DELIVERED' | 'PICKED_UP',
+    meta: RequestMeta,
+  ) {
+    const { rr, r } = await this.recipientOf(ph, requestId);
+    if (rr.status !== 'ACCEPTED')
+      throw new AppException('RECIPIENT_CLOSED', {
+        recipient_status: rr.status,
+        request_status: r.status,
+      });
+    if (r.status !== 'ACCEPTED' && r.status !== 'OFFER_ACCEPTED')
+      throw new AppException('REQUEST_NOT_EDITABLE', { status: r.status });
+    if (!rr.fulfillmentType || !rr.checkoutCompletedAt)
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        reason: 'patient_checkout_pending',
+      });
+
+    const current = rr.fulfillmentStatus;
+    if (current === status)
+      return {
+        request_id: r.id,
+        fulfillment_status: status,
+        fulfillment_updated_at: rr.fulfillmentUpdatedAt,
+        payment_status: rr.paymentStatus,
+        paid_at: rr.paidAt,
+      };
+
+    if (current === 'DELIVERED' || current === 'PICKED_UP')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        from: current,
+        to: status,
+      });
+    if (status === 'DELIVERED' && current !== 'HANDED_TO_DELIVERY')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        reason: 'hand_over_to_delivery_first',
+        from: current,
+        to: status,
+      });
+    if (
+      current === 'HANDED_TO_DELIVERY' &&
+      status !== 'DELIVERED' &&
+      status !== 'HANDED_TO_DELIVERY'
+    )
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        from: current,
+        to: status,
+      });
+    if (status === 'READY' && current !== null && current !== 'PREPARING')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        from: current,
+        to: status,
+      });
+    if (status === 'PREPARING' && current !== null && current !== 'PREPARING')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        from: current,
+        to: status,
+      });
+
+    const needsDelivery =
+      status === 'HANDED_TO_DELIVERY' || status === 'DELIVERED';
+    if (needsDelivery && rr.fulfillmentType !== 'DELIVERY')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        reason: 'not_a_delivery_request',
+      });
+    if (status === 'PICKED_UP' && rr.fulfillmentType !== 'PICKUP')
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        reason: 'not_a_pickup_request',
+      });
+
+    const now = new Date();
+    const settled = status === 'PICKED_UP' || status === 'DELIVERED';
+    const paidAt = settled ? (rr.paidAt ?? now) : rr.paidAt;
+    await this.db
+      .update(requestRecipients)
+      .set({
+        fulfillmentStatus: status,
+        fulfillmentUpdatedAt: now,
+        ...(settled
+          ? { paymentStatus: 'PAID' as const, paidAt: rr.paidAt ?? now }
+          : {}),
+      })
+      .where(eq(requestRecipients.id, rr.id));
+
+    await this.audit.log({
+      action: 'PHARMACY_FULFILLMENT_UPDATED',
+      actorUserId: user.id,
+      actorRole: user.role,
+      resourceType: 'request',
+      resourceId: r.id,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+      metadata: {
+        pharmacy_id: ph.id,
+        from: current,
+        to: status,
+        fulfillment_type: rr.fulfillmentType,
+        delivery_company_name: rr.deliveryCompanyName,
+      },
+    });
+
+    const orderStatusForNotification = {
+      PREPARING: 'PREPARING',
+      READY: 'READY_FOR_PICKUP',
+      HANDED_TO_DELIVERY: 'OUT_FOR_DELIVERY',
+      DELIVERED: 'DELIVERED',
+      PICKED_UP: 'COMPLETED',
+    } as const;
+    try {
+      await this.notifications.notify({
+        userIds: [r.patientUserId],
+        type: 'ORDER_STATUS_CHANGED',
+        params: {
+          reference: r.reference,
+          status: orderStatusForNotification[status],
+        },
+        data: { request_id: r.id },
+      });
+    } catch {
+      // A failed notification must not undo the fulfillment update.
+    }
+
+    return {
+      request_id: r.id,
+      fulfillment_status: status,
+      fulfillment_updated_at: now,
+      payment_status: settled ? 'PAID' : rr.paymentStatus,
+      paid_at: paidAt,
     };
   }
 
@@ -398,7 +743,8 @@ export class InboxService {
         recipient_status: rr.status,
       });
     }
-    await this.db.transaction(async (tx) => {
+    await this.uow.run(async (ctx) => {
+      const { tx } = ctx;
       await tx
         .update(requestRecipients)
         .set({
@@ -418,6 +764,44 @@ export class InboxService {
             eq(offers.status, 'DRAFT'),
           ),
         );
+      const [{ remaining }] = await tx
+        .select({
+          remaining: sql<number>`count(*) FILTER (WHERE ${requestRecipients.status} IN ('SENT', 'VIEWED', 'ACCEPTED', 'CLARIFICATION_ASKED', 'OFFERED'))::int`,
+        })
+        .from(requestRecipients)
+        .where(eq(requestRecipients.requestId, r.id));
+      const area = (r.deliveryAddressSnapshot ?? {}) as Record<string, unknown>;
+      const [{ eligiblePharmacies }] = await tx
+        .select({ eligiblePharmacies: count() })
+        .from(pharmacies)
+        .where(
+          and(
+            eq(pharmacies.status, 'VERIFIED'),
+            eq(pharmacies.acceptsRequests, true),
+            sql`${pharmacies.wilayaId} = ${Number(area.wilaya_id)}`,
+          ),
+        );
+      const [{ declinedRecipients }] = await tx
+        .select({ declinedRecipients: count() })
+        .from(requestRecipients)
+        .where(
+          and(
+            eq(requestRecipients.requestId, r.id),
+            eq(requestRecipients.status, 'DECLINED'),
+          ),
+        );
+      if (
+        Number(eligiblePharmacies) > 0 &&
+        Number(remaining) === 0 &&
+        Number(declinedRecipients) >= Number(eligiblePharmacies) &&
+        r.status === 'AWAITING_PHARMACY_RESPONSE'
+      ) {
+        await this.lifecycle.transition(ctx, r, 'REJECTED', {
+          userId: user.id,
+          role: user.role,
+          reason: 'All pharmacies declined',
+        });
+      }
       await this.refreshResponseTime(tx, ph.id);
       await this.audit.log(
         {

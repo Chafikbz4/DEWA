@@ -58,7 +58,7 @@ export class BaseRegisterDto {
 
   @ApiPropertyOptional({
     description:
-      'E.164 or Algerian local format (0550123456). At least one of email / phone is required. If both are given the OTP goes to the phone.',
+      'E.164 or Algerian local format (0550123456). At least one of email / phone is required. If both are given the OTP goes to the email.',
     example: '+213550123456',
   })
   @IsOptional()

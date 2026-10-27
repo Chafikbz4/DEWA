@@ -43,7 +43,8 @@ const PG_UNIQUE_VIOLATION = '23505';
 /**
  * All self-registration endpoints answer the same way whether or not the
  * email/phone is already used (202 + "code sent"), so accounts cannot be
- * enumerated. Non-patient accounts are created PENDING_VERIFICATION.
+ * enumerated. Pharmacy and patient accounts become active after OTP
+ * verification; other staff accounts remain pending admin review.
  */
 @Injectable()
 export class RegistrationService {
@@ -93,8 +94,9 @@ export class RegistrationService {
           latitude: p.latitude,
           longitude: p.longitude,
           phone: p.phone ? normalizePhone(p.phone) : null,
-          status: 'PENDING_VERIFICATION',
-          submittedForReviewAt: new Date(),
+          status: 'VERIFIED',
+          verifiedAt: new Date(),
+          acceptsRequests: true,
         })
         .returning({ id: pharmacies.id });
       await tx.insert(pharmacyStaff).values({
@@ -161,9 +163,9 @@ export class RegistrationService {
     const phone = dto.phone ? normalizePhone(dto.phone) : null;
     if (!email && !phone) throw new AppException('AUTH_IDENTIFIER_REQUIRED');
 
-    const target: NormalizedIdentifier = phone
-      ? { type: 'PHONE', value: phone }
-      : { type: 'EMAIL', value: email! };
+    const target: NormalizedIdentifier = email
+      ? { type: 'EMAIL', value: email }
+      : { type: 'PHONE', value: phone! };
     const lang = dto.preferred_language as Lang;
     const passwordHash = await hashPassword(dto.password); // always hash: constant timing
 

@@ -16,7 +16,7 @@ import { RegistrationService } from '../services/registration.service';
 
 const GENERIC =
   'Always answers 202 with a masked target, whether or not the email/phone is already registered (no enumeration). ' +
-  'A 6-digit code (purpose REGISTER) is sent to the phone (or email if no phone). Complete with POST /auth/otp/verify.';
+  'A 6-digit code (purpose REGISTER) is sent to the email (or phone if no email). Complete with POST /auth/otp/verify.';
 
 @ApiTags('Auth – registration')
 @Public()
@@ -45,7 +45,7 @@ export class RegistrationController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Register a pharmacy owner + pharmacy (DRAFT)',
-    description: `${GENERIC} The owner stays PENDING_VERIFICATION and the pharmacy DRAFT until documents are reviewed by an admin.`,
+    description: `${GENERIC} The pharmacy becomes active after the owner verifies the registration code.`,
   })
   @ApiEnvelope(OtpSentDto, { status: HttpStatus.ACCEPTED })
   @ApiErrors(
@@ -64,7 +64,7 @@ export class RegistrationController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Register a delivery company admin + company',
-    description: `${GENERIC} Account and company stay PENDING_VERIFICATION until an admin approves them.`,
+    description: `${GENERIC} The account and company stay PENDING_VERIFICATION until an admin approves them.`,
   })
   @ApiEnvelope(OtpSentDto, { status: HttpStatus.ACCEPTED })
   @ApiErrors(

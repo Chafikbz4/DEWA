@@ -13,13 +13,17 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { createdAt, pk, tstz, updatedAt } from './_columns';
+import { createdAt, money, pk, tstz, updatedAt } from './_columns';
 import {
   chifaVerificationStatusEnum,
   fileQualityStatusEnum,
+  fulfillmentTypeEnum,
   ocrStatusEnum,
+  paymentMethodEnum,
   recipientStatusEnum,
+  requestFulfillmentStatusEnum,
   requestItemSourceEnum,
+  requestPaymentStatusEnum,
   requestStatusEnum,
   requestTypeEnum,
   requestUrgencyEnum,
@@ -192,6 +196,20 @@ export const requestRecipients = pgTable(
     viewedAt: tstz('viewed_at'),
     respondedAt: tstz('responded_at'),
     declineReason: text('decline_reason'),
+    /** Amount the patient must pay, quoted when the pharmacy accepts (centimes). */
+    quotedAmountCentimes: money('quoted_amount_centimes'),
+    /** Patient checkout choices saved against the winning pharmacy. */
+    fulfillmentType: fulfillmentTypeEnum('fulfillment_type'),
+    deliveryCompanyId: uuid('delivery_company_id'),
+    deliveryCompanyName: varchar('delivery_company_name', { length: 200 }),
+    paymentMethod: paymentMethodEnum('payment_method'),
+    paymentStatus: requestPaymentStatusEnum('payment_status'),
+    /** Set when the pharmacy confirms the order was collected or delivered. */
+    paidAt: tstz('paid_at'),
+    checkoutCompletedAt: tstz('checkout_completed_at'),
+    /** Operational progress confirmed by the pharmacy after checkout. */
+    fulfillmentStatus: requestFulfillmentStatusEnum('fulfillment_status'),
+    fulfillmentUpdatedAt: tstz('fulfillment_updated_at'),
   },
   (t) => [
     uniqueIndex('request_recipients_request_pharmacy_uq').on(

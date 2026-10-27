@@ -19,8 +19,7 @@ export const PERMISSIONS_KEY = 'auth:permissions';
 
 /**
  * Admin endpoint guarded by permissions (ALL listed are required). Implies
- * role ADMIN or SUPER_ADMIN and an MFA-enabled account; with no argument any
- * such admin may call it.
+ * role ADMIN or SUPER_ADMIN; with no argument any such admin may call it.
  */
 export const RequirePermissions = (...permissions: Permission[]) =>
   applyDecorators(
@@ -59,7 +58,7 @@ export class PermissionsService {
   }
 }
 
-/** Runs after RolesGuard. Admin endpoints also require MFA. */
+/** Runs after RolesGuard and resolves the effective admin permissions. */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(
@@ -72,7 +71,7 @@ export class PermissionsGuard implements CanActivate {
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],
     );
-    // No metadata: not an admin endpoint. Empty list: any MFA-enabled admin.
+    // No metadata: not an admin endpoint. Empty list: any authenticated admin.
     if (!required) return true;
     const req = context
       .switchToHttp()
@@ -81,7 +80,6 @@ export class PermissionsGuard implements CanActivate {
     if (!user) throw new AppException('UNAUTHORIZED');
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')
       throw new AppException('ROLE_FORBIDDEN');
-    if (!user.mfaEnabled) throw new AppException('ADMIN_MFA_REQUIRED');
     const granted = await this.permissions.permissionsOf(user);
     req.permissions = granted;
     const missing = required.filter((p) => !granted.has(p));

@@ -194,6 +194,7 @@ export class NotificationsService implements OnModuleInit {
     const params: Record<string, string | number> = {
       ...(payload.params ?? {}),
     };
+    const safeParams: Record<string, string | number> = { ...params };
     if (payload.secret)
       Object.assign(
         params,
@@ -217,6 +218,8 @@ export class NotificationsService implements OnModuleInit {
       params.status_label === undefined
     )
       params.status_label = this.i18n.t(params.label_key, lang);
+    if (params.status_label !== undefined)
+      safeParams.status_label = params.status_label;
     const override = this.templates.get(row.type, lang);
     const fill = (tpl: string) =>
       tpl.replace(/\{(\w+)\}/g, (m, name: string) =>
@@ -230,6 +233,7 @@ export class NotificationsService implements OnModuleInit {
         ? fill(override.body)
         : this.i18n.t(row.bodyKey, lang, params),
       data: payload.data ?? {},
+      params: safeParams,
     };
   }
 
@@ -364,7 +368,7 @@ export class NotificationsService implements OnModuleInit {
     const lang = user.preferredLanguage as Lang;
     const page = Paginated.of(
       rows.map((r) => {
-        const { title, body, data } = this.render(r, lang);
+        const { title, body, data, params } = this.render(r, lang);
         return {
           id: r.id,
           type: r.type,
@@ -373,6 +377,7 @@ export class NotificationsService implements OnModuleInit {
           title_key: r.titleKey,
           body_key: r.bodyKey,
           data,
+          params,
           read_at: r.readAt,
           created_at: r.createdAt,
         };

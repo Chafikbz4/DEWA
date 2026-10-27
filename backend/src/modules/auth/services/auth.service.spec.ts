@@ -145,16 +145,15 @@ describe('AuthService.login', () => {
     });
   });
 
-  it('never issues tokens to an admin before MFA', async () => {
+  it('issues tokens for an admin without MFA', async () => {
     const { fake, tokens, service } = setup();
     fake.queue([user({ role: 'ADMIN', mfaEnabled: false })]);
     const res = await service.login('amina@example.dz', 'Str0ngPassw0rd', meta);
-    expect(res).toEqual({
-      mfa_required: true,
-      mfa_setup_required: true,
-      mfa_token: 'mfa-token',
+    expect(res).toMatchObject({
+      access_token: 'a',
+      user: { id: 'u1', role: 'ADMIN' },
     });
-    expect(tokens.issue).not.toHaveBeenCalled();
+    expect(tokens.issue).toHaveBeenCalled();
   });
 });
 

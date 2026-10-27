@@ -15,10 +15,9 @@ export class PharmacyRegisterController {
   @Post('register')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Register a pharmacy (owner + pharmacy in PENDING_VERIFICATION)',
+    summary: 'Register a pharmacy (owner + pharmacy activated after OTP)',
     description:
-      'Same as POST /auth/register/pharmacy. Then: verify the OTP, log in, upload documents (purpose PHARMACY_DOC) and attach them ' +
-      'with POST /pharmacy/documents. An admin reviews the documents; the pharmacy cannot receive requests until VERIFIED.',
+      'Same as POST /auth/register/pharmacy. After the owner verifies the OTP, the pharmacy can receive requests immediately.',
   })
   @ApiEnvelope(OtpSentDto, { status: HttpStatus.ACCEPTED })
   @ApiErrors(

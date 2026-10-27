@@ -374,11 +374,7 @@ export class MessagingService {
             and(
               eq(requestRecipients.requestId, r.id),
               eq(requestRecipients.pharmacyId, conversation.pharmacyId),
-              inArray(requestRecipients.status, [
-                'SENT',
-                'VIEWED',
-                'INTERESTED',
-              ]),
+              inArray(requestRecipients.status, ['SENT', 'VIEWED', 'ACCEPTED']),
             ),
           );
         await this.lifecycle.transition(ctx, r, 'CLARIFICATION_REQUIRED', {

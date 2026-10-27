@@ -127,6 +127,21 @@ export class DeliveryCompanyService {
     };
   }
 
+  /** Verified companies the patient can choose for a delivery order. */
+  async listVerified() {
+    return this.db
+      .select({
+        id: deliveryCompanies.id,
+        name: deliveryCompanies.name,
+        phone: deliveryCompanies.phone,
+        email: deliveryCompanies.email,
+        status: deliveryCompanies.status,
+      })
+      .from(deliveryCompanies)
+      .where(eq(deliveryCompanies.status, 'VERIFIED'))
+      .orderBy(deliveryCompanies.name);
+  }
+
   async addDocument(user: AuthUser, dto: CompanyDocumentDto) {
     const c = await this.companyOf(user);
     await this.files.assertUsable(

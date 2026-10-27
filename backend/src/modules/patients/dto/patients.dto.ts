@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsInt,
   IsLatitude,
@@ -38,6 +39,23 @@ export class UpdatePatientProfileDto {
   @IsString()
   @Length(1, 100)
   last_name?: string;
+
+  @ApiPropertyOptional({
+    example: 'amina.benali@example.dz',
+    description: 'Contact email; must not already be used by another account.',
+  })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
+
+  @ApiPropertyOptional({
+    example: '+213661234567',
+    description: 'Contact phone (E.164 or local); must not already be used.',
+  })
+  @IsOptional()
+  @IsPhone()
+  phone?: string;
 
   @ApiPropertyOptional({
     example: '1990-04-21',

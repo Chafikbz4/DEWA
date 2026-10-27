@@ -110,6 +110,23 @@ export class MatchingService {
           pharmacies.createdAt,
         )
         .limit(max);
+
+      // A service-area miss must not prevent the patient request from being
+      // published. Pharmacies in the same Wilaya can still review and claim it.
+      if (!rows.length) {
+        rows = await this.db
+          .select(select)
+          .from(pharmacies)
+          .innerJoin(communes, eq(communes.id, pharmacies.communeId))
+          .innerJoin(wilayas, eq(wilayas.id, pharmacies.wilayaId))
+          .where(and(...base, eq(pharmacies.wilayaId, input.wilayaId)))
+          .orderBy(
+            sql`${distance} ASC NULLS LAST`,
+            sql`${pharmacies.avgResponseMinutes} ASC NULLS LAST`,
+            pharmacies.createdAt,
+          )
+          .limit(max);
+      }
     }
 
     return rows.map((r) => ({

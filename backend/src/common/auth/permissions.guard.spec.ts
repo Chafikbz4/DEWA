@@ -30,14 +30,14 @@ describe('PermissionsGuard', () => {
     );
   });
 
-  it('requires an admin role and MFA', async () => {
+  it('requires an admin role without requiring MFA', async () => {
     require([]);
     await expect(
       guard.canActivate(ctxFor({ role: 'PATIENT', mfaEnabled: true })),
     ).rejects.toMatchObject({ code: 'ROLE_FORBIDDEN' });
     await expect(
       guard.canActivate(ctxFor({ ...admin, mfaEnabled: false })),
-    ).rejects.toMatchObject({ code: 'ADMIN_MFA_REQUIRED' });
+    ).resolves.toBe(true);
     await expect(guard.canActivate(ctxFor(admin))).resolves.toBe(true);
   });
 

@@ -123,9 +123,11 @@ export const stockStatusEnum = pgEnum('stock_status', [
 export const requestStatusEnum = pgEnum('request_status', [
   'REQUEST_SUBMITTED',
   'AWAITING_PHARMACY_RESPONSE',
+  'ACCEPTED',
   'CLARIFICATION_REQUIRED',
   'OFFER_AVAILABLE',
   'OFFER_ACCEPTED',
+  'REJECTED',
   'EXPIRED',
   'CANCELLED',
 ]);
@@ -162,7 +164,7 @@ export const chifaVerificationStatusEnum = pgEnum('chifa_verification_status', [
 export const recipientStatusEnum = pgEnum('recipient_status', [
   'SENT',
   'VIEWED',
-  'INTERESTED',
+  'ACCEPTED',
   'DECLINED',
   'CLARIFICATION_ASKED',
   'OFFERED',
@@ -241,6 +243,30 @@ export const fulfillmentTypeEnum = pgEnum('fulfillment_type', [
   'DELIVERY',
   'PICKUP',
 ]);
+
+/** Patient-facing payment choice at checkout. */
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'ON_DELIVERY',
+  'CCP',
+  'BARIDIMOB',
+]);
+
+/** Payment state for a request checkout (online methods are not charged yet). */
+export const requestPaymentStatusEnum = pgEnum('request_payment_status', [
+  'UNPAID',
+  'PAID',
+  'NOT_CHARGED',
+]);
+
+/**
+ * Patient-facing progress after the pharmacy accepted a request.
+ * Order-backed requests keep their own state machine; this mirrors the
+ * operational steps the pharmacy confirms for the request flow.
+ */
+export const requestFulfillmentStatusEnum = pgEnum(
+  'request_fulfillment_status',
+  ['PREPARING', 'READY', 'HANDED_TO_DELIVERY', 'DELIVERED', 'PICKED_UP'],
+);
 
 // ---------- Payments ----------
 export const paymentProviderEnum = pgEnum('payment_provider', [

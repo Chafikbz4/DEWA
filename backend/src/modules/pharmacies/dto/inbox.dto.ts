@@ -5,13 +5,17 @@ import {
   IsDateString,
   IsEnum,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   Length,
+  Max,
+  Min,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/http/pagination.dto';
 import {
   recipientStatusEnum,
+  requestFulfillmentStatusEnum,
   requestStatusEnum,
   requestUrgencyEnum,
 } from '../../../database/schema';
@@ -65,6 +69,31 @@ export class InboxQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['sent_at', 'expires_at'])
   sort?: 'sent_at' | 'expires_at';
+}
+
+export class AcceptInterestDto {
+  @ApiProperty({
+    example: 185000,
+    description:
+      'Amount the patient must pay for this request, in centimes of DZD',
+    minimum: 1,
+    maximum: 100_000_000,
+  })
+  @IsInt()
+  @Min(1)
+  @Max(100_000_000)
+  amount_centimes!: number;
+}
+
+export class UpdateFulfillmentDto {
+  @ApiProperty({
+    enum: requestFulfillmentStatusEnum.enumValues,
+    description:
+      'PREPARING / READY are optional progress markers; HANDED_TO_DELIVERY hands a delivery request to its company; DELIVERED closes a delivery; PICKED_UP closes a pickup.',
+  })
+  @IsEnum(requestFulfillmentStatusEnum.enumValues)
+  status!:
+    'PREPARING' | 'READY' | 'HANDED_TO_DELIVERY' | 'DELIVERED' | 'PICKED_UP';
 }
 
 export class DeclineDto {

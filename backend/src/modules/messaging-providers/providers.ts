@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import nodemailer, { Transporter } from 'nodemailer';
 import { maskIdentifier } from '../../common/utils/identifier';
 
 export const SMS_PROVIDER = Symbol('SMS_PROVIDER');
@@ -64,6 +66,35 @@ export class ConsoleEmailProvider
 {
   async send(to: string, subject: string, body: string) {
     this.push({ channel: 'EMAIL', to, subject, body, at: new Date() });
+  }
+}
+
+@Injectable()
+export class SmtpEmailProvider implements IEmailProvider {
+  private readonly transporter: Transporter;
+  private readonly from: string;
+
+  constructor(config: ConfigService) {
+    const host = config.getOrThrow<string>('SMTP_HOST');
+    const port = config.get<number>('SMTP_PORT', 587);
+    const user = config.getOrThrow<string>('SMTP_USER');
+    const password = config.getOrThrow<string>('SMTP_PASSWORD');
+    this.from = config.get<string>('EMAIL_FROM', user);
+    this.transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass: password },
+    });
+  }
+
+  async send(to: string, subject: string, body: string) {
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject,
+      text: body,
+    });
   }
 }
 

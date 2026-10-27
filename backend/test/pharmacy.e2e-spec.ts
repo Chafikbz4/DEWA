@@ -452,14 +452,25 @@ describe('Pharmacy domain (e2e)', () => {
       ).toContain(request.id);
     });
 
-    it('interest does not create offers; clarification moves the request and opens a conversation', async () => {
+    it('accepts the request with the patient amount and does not create offers', async () => {
       const { request, patient } = await newRequest();
+      const missing = await ctx
+        .http()
+        .post(`/pharmacy/requests/${request.id}/accept-interest`)
+        .set(bearer(assistant.token))
+        .expect(400);
+      expect(missing.body.error.code).toBe('VALIDATION_FAILED');
+
       const interest = await ctx
         .http()
         .post(`/pharmacy/requests/${request.id}/accept-interest`)
         .set(bearer(assistant.token))
+        .send({ amount_centimes: 185000 })
         .expect(200);
-      expect(interest.body.data.recipient_status).toBe('INTERESTED');
+      expect(interest.body.data).toMatchObject({
+        recipient_status: 'ACCEPTED',
+        quoted_amount_centimes: 185000,
+      });
       const offers = await ctx
         .http()
         .get(`/requests/${request.id}/offers`)
@@ -467,6 +478,25 @@ describe('Pharmacy domain (e2e)', () => {
         .expect(200);
       expect(offers.body.data).toEqual([]);
 
+      const [r] = await ctx.db
+        .select({ status: requests.status })
+        .from(requests)
+        .where(eq(requests.id, request.id));
+      expect(r.status).toBe('ACCEPTED');
+      const [rr] = await ctx.db
+        .select()
+        .from(requestRecipients)
+        .where(
+          and(
+            eq(requestRecipients.requestId, request.id),
+            eq(requestRecipients.pharmacyId, ph.pharmacyId),
+          ),
+        );
+      expect(rr.quotedAmountCentimes).toBe(185000);
+    });
+
+    it('clarification moves the request and opens a conversation', async () => {
+      const { request, patient } = await newRequest();
       const q = await ctx
         .http()
         .post(`/pharmacy/requests/${request.id}/clarification`)
@@ -505,6 +535,7 @@ describe('Pharmacy domain (e2e)', () => {
             .http()
             .post(`/pharmacy/requests/${request.id}/accept-interest`)
             .set(bearer(pharmacist.token))
+            .send({ amount_centimes: 185000 })
             .expect(409)
         ).body.error.code,
       ).toBe('RECIPIENT_CLOSED');

@@ -24,6 +24,7 @@ import { Database, DRIZZLE } from '../../database/database.module';
 import {
   chifaSubmissions,
   consentRecords,
+  deliveryCompanies,
   dependants,
   INACTIVE_ORDER_STATUSES,
   offers,
@@ -43,6 +44,7 @@ import {
   CreateRequestDto,
   MatchingPreviewDto,
   RequestDetailDto,
+  RequestCheckoutDto,
   RequestItemInputDto,
   RequestsQueryDto,
   RequestSummaryDto,
@@ -71,6 +73,18 @@ const EDITABLE_ITEM_STATUSES: RequestStatus[] = [
 ];
 
 type RequestRow = typeof requests.$inferSelect;
+
+type CheckoutSnapshot = {
+  fulfillment_type: string | null;
+  delivery_company_id: string | null;
+  delivery_company_name: string | null;
+  payment_method: string | null;
+  payment_status: string | null;
+  paid_at: string | null;
+  completed_at: string | null;
+  fulfillment_status: string | null;
+  fulfillment_updated_at: string | null;
+};
 
 @Injectable()
 export class RequestsService {
@@ -199,9 +213,6 @@ export class RequestsService {
       deliveryWanted: dto.delivery_wanted,
       pharmacyIds: dto.pharmacy_ids,
     });
-    if (!recipients.length)
-      throw new AppException('REQUEST_NO_PHARMACY_MATCHED');
-
     // CHIFA: official verification only through the provider (default: NOT_AVAILABLE).
     let chifa: {
       status: 'NOT_VERIFIED' | 'VERIFIED' | 'FAILED';
@@ -295,13 +306,15 @@ export class RequestsService {
           verifiedAt: chifa.status === 'VERIFIED' ? new Date() : null,
         });
       }
-      await tx.insert(requestRecipients).values(
-        recipients.map((p) => ({
-          requestId: req.id,
-          pharmacyId: p.id,
-          status: 'SENT' as const,
-        })),
-      );
+      if (recipients.length) {
+        await tx.insert(requestRecipients).values(
+          recipients.map((p) => ({
+            requestId: req.id,
+            pharmacyId: p.id,
+            status: 'SENT' as const,
+          })),
+        );
+      }
 
       await this.audit.log(
         {
@@ -385,6 +398,30 @@ export class RequestsService {
           dependantFirstName: dependants.firstName,
           recipients: sql<number>`(SELECT count(*)::int FROM ${requestRecipients} rr WHERE rr.request_id = ${requests.id})`,
           offersCount: sql<number>`(SELECT count(*)::int FROM ${offers} o WHERE o.request_id = ${requests.id} AND o.status IN ('SENT','ACCEPTED'))`,
+          acceptedAmount: sql<
+            number | null
+          >`(SELECT rr.quoted_amount_centimes FROM ${requestRecipients} rr WHERE rr.request_id = ${requests.id} AND rr.status = 'ACCEPTED' LIMIT 1)`,
+          acceptedPharmacyName: sql<
+            string | null
+          >`(SELECT p.name_fr FROM ${requestRecipients} rr INNER JOIN ${pharmacies} p ON p.id = rr.pharmacy_id WHERE rr.request_id = ${requests.id} AND rr.status = 'ACCEPTED' LIMIT 1)`,
+          checkout: sql<CheckoutSnapshot | null>`(
+            SELECT jsonb_build_object(
+              'fulfillment_type', rr.fulfillment_type::text,
+              'delivery_company_id', rr.delivery_company_id,
+              'delivery_company_name', rr.delivery_company_name,
+              'payment_method', rr.payment_method::text,
+              'payment_status', rr.payment_status::text,
+              'paid_at', rr.paid_at,
+              'completed_at', rr.checkout_completed_at,
+              'fulfillment_status', rr.fulfillment_status::text,
+              'fulfillment_updated_at', rr.fulfillment_updated_at
+            )
+            FROM ${requestRecipients} rr
+            WHERE rr.request_id = ${requests.id}
+              AND rr.checkout_completed_at IS NOT NULL
+            ORDER BY rr.checkout_completed_at DESC
+            LIMIT 1
+          )`,
         })
         .from(requests)
         .leftJoin(dependants, eq(dependants.id, requests.dependantId))
@@ -400,6 +437,9 @@ export class RequestsService {
         row.dependantFirstName,
         row.recipients,
         row.offersCount,
+        row.acceptedAmount,
+        row.acceptedPharmacyName,
+        row.checkout,
       ),
     );
     return Paginated.of(items, total, q.page, q.limit);
@@ -410,7 +450,14 @@ export class RequestsService {
     dependantFirstName: string | null,
     recipients: number,
     offersCount: number,
+    acceptedAmount: number | null = null,
+    acceptedPharmacyName: string | null = null,
+    checkout: CheckoutSnapshot | null = null,
   ): RequestSummaryDto {
+    const address = (r.deliveryAddressSnapshot ?? {}) as Record<
+      string,
+      unknown
+    >;
     return {
       id: r.id,
       reference: r.reference,
@@ -419,8 +466,30 @@ export class RequestsService {
       urgency: r.urgency,
       delivery_wanted: r.deliveryWanted,
       dependant_first_name: dependantFirstName,
+      wilaya_name_fr: (address.wilaya_name_fr as string) ?? null,
+      wilaya_name_ar: (address.wilaya_name_ar as string) ?? null,
+      commune_name_fr: (address.commune_name_fr as string) ?? null,
+      commune_name_ar: (address.commune_name_ar as string) ?? null,
       recipients_count: Number(recipients),
       offers_count: Number(offersCount),
+      accepted_amount_centimes:
+        acceptedAmount === null || acceptedAmount === undefined
+          ? null
+          : Number(acceptedAmount),
+      accepted_pharmacy_name_fr: acceptedPharmacyName,
+      fulfillment_type: checkout?.fulfillment_type ?? null,
+      delivery_company_id: checkout?.delivery_company_id ?? null,
+      delivery_company_name: checkout?.delivery_company_name ?? null,
+      payment_method: checkout?.payment_method ?? null,
+      payment_status: checkout?.payment_status ?? null,
+      paid_at: checkout?.paid_at ? new Date(checkout.paid_at) : null,
+      checkout_completed_at: checkout?.completed_at
+        ? new Date(checkout.completed_at)
+        : null,
+      fulfillment_status: checkout?.fulfillment_status ?? null,
+      fulfillment_updated_at: checkout?.fulfillment_updated_at
+        ? new Date(checkout.fulfillment_updated_at)
+        : null,
       expires_at: r.expiresAt,
       created_at: r.createdAt,
     };
@@ -476,12 +545,40 @@ export class RequestsService {
           : Promise.resolve([] as { firstName: string }[]),
       ]);
     const chifa = chifaRows[0];
+    const acceptedRecipient = recipientRows.find(
+      ({ rr }) => rr.status === 'ACCEPTED',
+    );
+    const checkoutRecipient = recipientRows
+      .filter(({ rr }) => !!rr.checkoutCompletedAt)
+      .sort(
+        (a, b) =>
+          (b.rr.checkoutCompletedAt?.getTime() ?? 0) -
+          (a.rr.checkoutCompletedAt?.getTime() ?? 0),
+      )[0];
+    const checkout: CheckoutSnapshot | null = checkoutRecipient
+      ? {
+          fulfillment_type: checkoutRecipient.rr.fulfillmentType,
+          delivery_company_id: checkoutRecipient.rr.deliveryCompanyId,
+          delivery_company_name: checkoutRecipient.rr.deliveryCompanyName,
+          payment_method: checkoutRecipient.rr.paymentMethod,
+          payment_status: checkoutRecipient.rr.paymentStatus,
+          paid_at: checkoutRecipient.rr.paidAt?.toISOString() ?? null,
+          completed_at:
+            checkoutRecipient.rr.checkoutCompletedAt?.toISOString() ?? null,
+          fulfillment_status: checkoutRecipient.rr.fulfillmentStatus,
+          fulfillment_updated_at:
+            checkoutRecipient.rr.fulfillmentUpdatedAt?.toISOString() ?? null,
+        }
+      : null;
     return {
       ...this.summary(
         r,
         dep[0]?.firstName ?? null,
         recipientRows.length,
         offerRows.length,
+        acceptedRecipient?.rr.quotedAmountCentimes ?? null,
+        acceptedRecipient?.nameFr ?? null,
+        checkout,
       ),
       patient_note: r.patientNote,
       delivery_address:
@@ -518,6 +615,15 @@ export class RequestsService {
         sent_at: rr.sentAt,
         viewed_at: rr.viewedAt,
         responded_at: rr.respondedAt,
+        quoted_amount_centimes: rr.quotedAmountCentimes,
+        fulfillment_type: rr.fulfillmentType,
+        delivery_company_name: rr.deliveryCompanyName,
+        payment_method: rr.paymentMethod,
+        payment_status: rr.paymentStatus,
+        paid_at: rr.paidAt,
+        checkout_completed_at: rr.checkoutCompletedAt,
+        fulfillment_status: rr.fulfillmentStatus,
+        fulfillment_updated_at: rr.fulfillmentUpdatedAt,
       })),
       offers_summary: {
         count: offerRows.length,
@@ -529,6 +635,136 @@ export class RequestsService {
       cancelled_at: r.cancelledAt,
       cancel_reason: r.cancelReason,
       updated_at: r.updatedAt,
+    };
+  }
+
+  /** Saves the patient's pickup/delivery and payment choice for the pharmacy. */
+  async saveCheckout(
+    user: AuthUser,
+    id: string,
+    dto: RequestCheckoutDto,
+    meta: RequestMeta,
+  ) {
+    const r = await this.findOwned(user.id, id);
+    if (r.status !== 'ACCEPTED' && r.status !== 'OFFER_ACCEPTED')
+      throw new AppException('REQUEST_NOT_EDITABLE');
+
+    const [order] = await this.db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.requestId, id),
+          notInArray(orders.status, [...INACTIVE_ORDER_STATUSES]),
+        ),
+      )
+      .limit(1);
+
+    const [recipient] = order
+      ? await this.db
+          .select()
+          .from(requestRecipients)
+          .where(
+            and(
+              eq(requestRecipients.requestId, id),
+              eq(requestRecipients.pharmacyId, order.pharmacyId),
+            ),
+          )
+          .limit(1)
+      : await this.db
+          .select()
+          .from(requestRecipients)
+          .where(
+            and(
+              eq(requestRecipients.requestId, id),
+              eq(requestRecipients.status, 'ACCEPTED'),
+            ),
+          )
+          .limit(1);
+    if (!recipient) throw new AppException('RECIPIENT_CLOSED');
+
+    let company: { id: string; name: string } | null = null;
+    if (dto.fulfillment_type === 'DELIVERY' && dto.delivery_company_id) {
+      const [companyRow] = await this.db
+        .select({
+          id: deliveryCompanies.id,
+          name: deliveryCompanies.name,
+          status: deliveryCompanies.status,
+        })
+        .from(deliveryCompanies)
+        .where(eq(deliveryCompanies.id, dto.delivery_company_id))
+        .limit(1);
+      if (!companyRow) throw new AppException('DELIVERY_COMPANY_NOT_FOUND');
+      if (companyRow.status !== 'VERIFIED')
+        throw new AppException('DELIVERY_COMPANY_NOT_VERIFIED');
+      company = { id: companyRow.id, name: companyRow.name };
+    }
+
+    const now = new Date();
+    const paymentStatus =
+      dto.payment_method === 'ON_DELIVERY' ? 'UNPAID' : 'NOT_CHARGED';
+    const typeChanged =
+      !!recipient.fulfillmentType &&
+      recipient.fulfillmentType !== dto.fulfillment_type;
+    if (
+      typeChanged &&
+      recipient.fulfillmentStatus &&
+      ['HANDED_TO_DELIVERY', 'DELIVERED', 'PICKED_UP'].includes(
+        recipient.fulfillmentStatus,
+      )
+    )
+      throw new AppException('REQUEST_NOT_EDITABLE', {
+        reason: 'fulfillment_in_progress',
+        fulfillment_status: recipient.fulfillmentStatus,
+      });
+    const fulfillmentStatus =
+      typeChanged || !recipient.fulfillmentStatus
+        ? 'PREPARING'
+        : recipient.fulfillmentStatus;
+    const fulfillmentUpdatedAt =
+      typeChanged || !recipient.fulfillmentUpdatedAt
+        ? now
+        : recipient.fulfillmentUpdatedAt;
+    await this.db
+      .update(requestRecipients)
+      .set({
+        fulfillmentType: dto.fulfillment_type,
+        deliveryCompanyId: company?.id ?? null,
+        deliveryCompanyName: company?.name ?? null,
+        paymentMethod: dto.payment_method,
+        paymentStatus,
+        checkoutCompletedAt: now,
+        fulfillmentStatus,
+        fulfillmentUpdatedAt,
+      })
+      .where(eq(requestRecipients.id, recipient.id));
+
+    await this.audit.log({
+      action: 'REQUEST_CHECKOUT_SAVED',
+      actorUserId: user.id,
+      actorRole: user.role,
+      resourceType: 'request',
+      resourceId: r.id,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+      metadata: {
+        fulfillment_type: dto.fulfillment_type,
+        delivery_company_id: company?.id ?? null,
+        payment_method: dto.payment_method,
+        payment_status: paymentStatus,
+      },
+    });
+
+    return {
+      request_id: r.id,
+      fulfillment_type: dto.fulfillment_type,
+      delivery_company_id: company?.id ?? null,
+      delivery_company_name: company?.name ?? null,
+      payment_method: dto.payment_method,
+      payment_status: paymentStatus,
+      checkout_completed_at: now,
+      fulfillment_status: fulfillmentStatus,
+      fulfillment_updated_at: fulfillmentUpdatedAt,
     };
   }
 

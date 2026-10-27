@@ -16,6 +16,7 @@ import {
   DeliveryCompanyController,
   DeliveryRegisterController,
   DriverController,
+  PatientDeliveryCompaniesController,
   PatientDeliveryController,
   PharmacyDeliveryController,
 } from './delivery.controller';
@@ -77,6 +78,7 @@ class DeliveryNotifications {
     DeliveryRegisterController,
     DriverController,
     DeliveryCompanyController,
+    PatientDeliveryCompaniesController,
     PatientDeliveryController,
     PharmacyDeliveryController,
   ],

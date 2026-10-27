@@ -92,6 +92,48 @@
       "when": 1792169125067,
       "tag": "0012_admin_least_privilege",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792169125068,
+      "tag": "0013_request_rejected",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792169125069,
+      "tag": "0014_pharmacy_accepts_request",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792169125070,
+      "tag": "0015_request_accept_amount",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792169125071,
+      "tag": "0016_request_checkout",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792169125072,
+      "tag": "0017_request_fulfillment",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792169125073,
+      "tag": "0018_payment_and_stock_details",
+      "breakpoints": true
     }
   ]
 }

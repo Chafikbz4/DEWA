@@ -87,6 +87,12 @@ class NotificationDto {
     description: 'Ids for deep links',
   })
   data!: Record<string, string>;
+  @ApiProperty({
+    example: { reference: 'RX-2026-000123', status: 'DELIVERED' },
+    description:
+      'Safe template parameters (never contains one-time codes) used to build the activity line',
+  })
+  params!: Record<string, string | number>;
   @ApiPropertyOptional({ nullable: true }) read_at!: Date | null;
   @ApiProperty() created_at!: Date;
 }

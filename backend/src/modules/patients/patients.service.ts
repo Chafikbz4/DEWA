@@ -6,7 +6,7 @@ import { CryptoService } from '../../common/crypto/crypto.service';
 import { AppException } from '../../common/errors/app.exception';
 import { Paginated } from '../../common/http/envelope';
 import { PaginationQueryDto } from '../../common/http/pagination.dto';
-import { normalizePhone } from '../../common/utils/identifier';
+import { normalizeEmail, normalizePhone } from '../../common/utils/identifier';
 import { Database, DbOrTx, DRIZZLE } from '../../database/database.module';
 import {
   addresses,
@@ -106,11 +106,64 @@ export class PatientsService {
           .set(profile)
           .where(eq(patientProfiles.userId, user.id));
       }
-      if (dto.preferred_language) {
-        await tx
-          .update(users)
-          .set({ preferredLanguage: dto.preferred_language })
-          .where(eq(users.id, user.id));
+
+      const email =
+        dto.email !== undefined ? normalizeEmail(dto.email) : undefined;
+      const phone =
+        dto.phone !== undefined ? normalizePhone(dto.phone) ?? undefined : undefined;
+      if (email !== undefined || phone !== undefined || dto.preferred_language) {
+        const [current] = await tx
+          .select({ email: users.email, phone: users.phone })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .limit(1);
+
+        if (email !== undefined && email !== current?.email) {
+          const [taken] = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(
+              and(
+                eq(users.email, email),
+                ne(users.id, user.id),
+                isNull(users.deletedAt),
+              ),
+            )
+            .limit(1);
+          if (taken) throw new AppException('IDENTIFIER_ALREADY_USED');
+        }
+        if (phone !== undefined && phone !== current?.phone) {
+          const [taken] = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(
+              and(
+                eq(users.phone, phone),
+                ne(users.id, user.id),
+                isNull(users.deletedAt),
+              ),
+            )
+            .limit(1);
+          if (taken) throw new AppException('IDENTIFIER_ALREADY_USED');
+        }
+
+        const account: Partial<typeof users.$inferInsert> = {};
+        if (dto.preferred_language)
+          account.preferredLanguage = dto.preferred_language;
+        if (email !== undefined && email !== current?.email) {
+          account.email = email;
+          account.emailVerifiedAt = null;
+        }
+        if (phone !== undefined && phone !== current?.phone) {
+          account.phone = phone;
+          account.phoneVerifiedAt = null;
+        }
+        if (Object.keys(account).length) {
+          await tx
+            .update(users)
+            .set(account)
+            .where(eq(users.id, user.id));
+        }
       }
       await this.audit.log(
         {

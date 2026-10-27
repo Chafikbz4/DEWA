@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   uniqueIndex,
@@ -70,6 +71,10 @@ export const pharmacyStock = pgTable(
     stockStatus: stockStatusEnum('stock_status').notNull(),
     quantity: integer('quantity'),
     unitPriceCentimes: money('unit_price_centimes'),
+    /** Optional picture shown in the pharmacy stock board. */
+    imageUrl: text('image_url'),
+    /** Flexible, medicine-specific details (brand, dosage form, expiry…). */
+    attributes: jsonb('attributes').notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

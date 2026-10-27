@@ -141,6 +141,8 @@ export class CatalogService {
         stock_status: s.stockStatus,
         quantity: s.quantity,
         unit_price_centimes: s.unitPriceCentimes,
+        image_url: s.imageUrl,
+        attributes: (s.attributes ?? {}) as Record<string, string>,
         updated_at: s.updatedAt,
       })),
       total,
@@ -151,6 +153,8 @@ export class CatalogService {
 
   async putStock(ph: PharmacyContext, medicineId: string, dto: PutStockDto) {
     await this.getMedicine(medicineId);
+    const attributes = this.normalizeAttributes(dto.attributes);
+    const imageUrl = dto.image_url?.trim().slice(0, 90000) || null;
     const [s] = await this.db
       .insert(pharmacyStock)
       .values({
@@ -159,6 +163,8 @@ export class CatalogService {
         stockStatus: dto.stock_status,
         quantity: dto.quantity ?? null,
         unitPriceCentimes: dto.unit_price_centimes ?? null,
+        imageUrl,
+        attributes,
       })
       .onConflictDoUpdate({
         target: [pharmacyStock.pharmacyId, pharmacyStock.medicineId],
@@ -166,6 +172,8 @@ export class CatalogService {
           stockStatus: dto.stock_status,
           quantity: dto.quantity ?? null,
           unitPriceCentimes: dto.unit_price_centimes ?? null,
+          imageUrl,
+          attributes,
           updatedAt: new Date(),
         },
       })
@@ -175,8 +183,31 @@ export class CatalogService {
       stock_status: s.stockStatus,
       quantity: s.quantity,
       unit_price_centimes: s.unitPriceCentimes,
+      image_url: s.imageUrl,
+      attributes: s.attributes,
       updated_at: s.updatedAt,
     };
+  }
+
+  private normalizeAttributes(
+    value: Record<string, string> | undefined,
+  ): Record<string, string> {
+    if (!value || typeof value !== 'object') return {};
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(
+          ([key, val]) =>
+            typeof key === 'string' &&
+            key.trim() !== '' &&
+            typeof val === 'string' &&
+            val.trim() !== '',
+        )
+        .slice(0, 24)
+        .map(([key, val]) => [
+          key.trim().slice(0, 60),
+          val.trim().slice(0, 200),
+        ]),
+    );
   }
 
   async deleteStock(ph: PharmacyContext, medicineId: string) {

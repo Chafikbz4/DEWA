@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Length,
@@ -101,6 +102,26 @@ export class PutStockDto {
   @Min(0)
   @Max(100_000_000)
   unit_price_centimes?: number;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Picture URL shown on the stock board',
+    example: '/medicine-capsule.svg',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(0, 90000)
+  image_url?: string | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    description:
+      'Medicine-specific details, e.g. { "Dosage": "500 mg", "Expiry": "2027-04" }',
+  })
+  @IsOptional()
+  @IsObject()
+  attributes?: Record<string, string>;
 }
 
 export class StockImportQueryDto {

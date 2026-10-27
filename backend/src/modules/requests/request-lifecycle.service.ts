@@ -23,11 +23,14 @@ export const OPEN_REQUEST_STATUSES: RequestStatus[] = [
 export const REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   REQUEST_SUBMITTED: ['AWAITING_PHARMACY_RESPONSE', 'CANCELLED', 'EXPIRED'],
   AWAITING_PHARMACY_RESPONSE: [
+    'ACCEPTED',
     'CLARIFICATION_REQUIRED',
     'OFFER_AVAILABLE',
+    'REJECTED',
     'CANCELLED',
     'EXPIRED',
   ],
+  ACCEPTED: ['CANCELLED'],
   CLARIFICATION_REQUIRED: [
     'AWAITING_PHARMACY_RESPONSE',
     'OFFER_AVAILABLE',
@@ -42,6 +45,7 @@ export const REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
     'EXPIRED',
   ],
   OFFER_ACCEPTED: ['CANCELLED'],
+  REJECTED: [],
   EXPIRED: [],
   CANCELLED: [],
 };

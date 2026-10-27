@@ -28,7 +28,7 @@ export const PHARMACY_ROLES: readonly Role[] = [
   'PHARMACIST',
   'PHARMACY_ASSISTANT',
 ];
-/** Roles for which TOTP MFA is mandatory before any token is issued. */
-export const MFA_MANDATORY_ROLES: readonly Role[] = ADMIN_ROLES;
+/** No roles require TOTP before a normal login session is issued. */
+export const MFA_MANDATORY_ROLES: readonly Role[] = [];
 /** Roles that may opt in to TOTP MFA. */
 export const MFA_OPTIONAL_ROLES: readonly Role[] = PHARMACY_ROLES;

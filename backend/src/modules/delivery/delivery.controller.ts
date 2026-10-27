@@ -490,6 +490,25 @@ export class DeliveryCompanyController {
 
 // ---------------------------------------------------------------- patient
 
+@ApiTags('Delivery – companies (patient)')
+@ApiBearerAuth()
+@Roles('PATIENT')
+@Controller('delivery')
+export class PatientDeliveryCompaniesController {
+  constructor(private readonly companies: DeliveryCompanyService) {}
+
+  @Get('companies')
+  @ApiOperation({
+    summary: 'Verified delivery companies',
+    description:
+      'Active partners a patient can select when a delivery order is accepted.',
+  })
+  @ApiErrors(...AUTH)
+  list() {
+    return this.companies.listVerified();
+  }
+}
+
 @ApiTags('Orders (patient)')
 @ApiBearerAuth()
 @Roles('PATIENT')

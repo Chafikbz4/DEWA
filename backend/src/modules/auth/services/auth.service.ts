@@ -228,17 +228,15 @@ export class AuthService {
     }
   }
 
-  /**
-   * Issues tokens, unless MFA is still needed: mandatory roles must pass
-   * (or first enrol) TOTP before ANY token is issued.
-   */
+  /** Issues a session, while preserving opt-in MFA for supported roles. */
   async completeLogin(
     user: UserRow,
     meta: RequestMeta,
     opts: { mfaPassed?: boolean; tx?: DbOrTx } = {},
   ): Promise<LoginResponseDto> {
     const mfaNeeded =
-      MFA_MANDATORY_ROLES.includes(user.role) || user.mfaEnabled;
+      MFA_MANDATORY_ROLES.includes(user.role) ||
+      (MFA_OPTIONAL_ROLES.includes(user.role) && user.mfaEnabled);
     if (mfaNeeded && !opts.mfaPassed) {
       return {
         mfa_required: true,
@@ -573,10 +571,11 @@ export class AuthService {
       id.type === 'EMAIL'
         ? { emailVerifiedAt: new Date() }
         : { phoneVerifiedAt: new Date() };
-    // Patients self-activate on first verification. Every other role stays
-    // PENDING_VERIFICATION until an admin approves it.
+    // Patients and pharmacy owners self-activate after proving ownership of
+    // their identifier. Other roles remain pending admin review.
     const activate =
-      user.role === 'PATIENT' && user.status === 'PENDING_VERIFICATION';
+      (user.role === 'PATIENT' || user.role === 'PHARMACY_OWNER') &&
+      user.status === 'PENDING_VERIFICATION';
     const [updated] = await this.db
       .update(users)
       .set({
