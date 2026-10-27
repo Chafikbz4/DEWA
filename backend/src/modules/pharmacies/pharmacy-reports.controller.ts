@@ -68,7 +68,8 @@ export class PharmacyReportsController {
     const inRange = (col: Parameters<typeof gte>[0]) =>
       and(gte(col, from), lt(col, to)) as SQL;
 
-    const [recipients, response, offerStats, orderStats] = await Promise.all([
+    const [recipients, response, offerStats, orderStats, recipientFlow] =
+      await Promise.all([
       this.db
         .select({ status: requestRecipients.status, n: count() })
         .from(requestRecipients)
@@ -113,26 +114,52 @@ export class PharmacyReportsController {
         .from(orders)
         .where(and(eq(orders.pharmacyId, ph.id), inRange(orders.createdAt)))
         .groupBy(orders.status),
+      // Demo fulfilment runs on request_recipients: accepted amount becomes
+      // revenue once the pharmacy marks the order picked up or delivered.
+      this.db
+        .select({
+          accepted: sql<number>`count(*) FILTER (WHERE ${requestRecipients.status} = 'ACCEPTED')::int`,
+          settled: sql<number>`count(*) FILTER (WHERE ${requestRecipients.fulfillmentStatus} IN ('DELIVERED', 'PICKED_UP'))::int`,
+          revenue: sql<number>`coalesce(sum(${requestRecipients.quotedAmountCentimes}) FILTER (WHERE ${requestRecipients.fulfillmentStatus} IN ('DELIVERED', 'PICKED_UP')), 0)::bigint`,
+        })
+        .from(requestRecipients)
+        .where(
+          and(
+            eq(requestRecipients.pharmacyId, ph.id),
+            inRange(requestRecipients.sentAt),
+          ),
+        ),
     ]);
     const byStatus = (rows: { status: string; n: number }[]) =>
       Object.fromEntries(rows.map((r) => [r.status, Number(r.n)]));
     const offersSent = offerStats.reduce((s, r) => s + Number(r.n), 0);
     const accepted = offerStats.find((r) => r.status === 'ACCEPTED')?.n ?? 0;
+    const flow = recipientFlow[0] ?? { accepted: 0, settled: 0, revenue: 0 };
+    const requestsAccepted = Number(flow.accepted ?? 0);
+    const ordersSettled = Number(flow.settled ?? 0);
+    const orderRevenue = orderStats
+      .filter((o) => REVENUE_STATUSES.includes(o.status))
+      .reduce((s, o) => s + Number(o.total), 0);
+    const settledRevenue = Number(flow.revenue ?? 0);
+    const offersSentTotal = offersSent + requestsAccepted;
+    const offersAcceptedTotal = Number(accepted) + requestsAccepted;
     return {
       from,
       to,
       requests_received: recipients.reduce((s, r) => s + Number(r.n), 0),
       requests_by_recipient_status: byStatus(recipients),
       avg_response_minutes: response[0]?.avg ?? null,
-      offers_sent: offersSent,
-      offers_accepted: Number(accepted),
-      conversion_rate: offersSent
-        ? Math.round((Number(accepted) / offersSent) * 1000) / 1000
+      // Includes request-based acceptances (demo flow) alongside formal offers.
+      offers_sent: offersSentTotal,
+      offers_accepted: offersAcceptedTotal,
+      requests_accepted: requestsAccepted,
+      orders_settled: ordersSettled,
+      conversion_rate: offersSentTotal
+        ? Math.round((offersAcceptedTotal / offersSentTotal) * 1000) / 1000
         : null,
       orders_by_status: byStatus(orderStats),
-      revenue_centimes: orderStats
-        .filter((o) => REVENUE_STATUSES.includes(o.status))
-        .reduce((s, o) => s + Number(o.total), 0),
+      // Money the pharmacy has earned: handed-over orders from either flow.
+      revenue_centimes: orderRevenue + settledRevenue,
     };
   }
 

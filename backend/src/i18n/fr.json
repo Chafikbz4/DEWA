@@ -319,6 +319,10 @@
     "COMPLAINT_OUTCOME": {
       "title": "Réclamation",
       "body": "Réclamation {reference} : {status_label}."
+    },
+    "PHARMACY_ORDER_PLACED": {
+      "title": "Nouvelle commande",
+      "body": "Le patient a accepté la commande {reference} · {fulfillment} · {payment}."
     }
   },
   "system": {

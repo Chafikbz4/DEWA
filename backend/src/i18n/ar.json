@@ -319,6 +319,10 @@
     "COMPLAINT_OUTCOME": {
       "title": "شكوى",
       "body": "الشكوى {reference}: {status_label}."
+    },
+    "PHARMACY_ORDER_PLACED": {
+      "title": "طلب جديد",
+      "body": "قبل المريض الطلب {reference} · {fulfillment} · {payment}."
     }
   },
   "system": {

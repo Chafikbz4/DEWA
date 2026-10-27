@@ -30,6 +30,7 @@ import {
   offers,
   orders,
   pharmacies,
+  pharmacyStaff,
   requestFiles,
   requestItems,
   requestRecipients,
@@ -38,6 +39,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { FilesService } from '../files/files.service';
 import { JobQueueService } from '../jobs/job-queue.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PatientsService } from '../patients/patients.service';
 import { SettingsService } from '../settings/settings.service';
 import {
@@ -102,6 +104,7 @@ export class RequestsService {
     private readonly jobs: JobQueueService,
     private readonly crypto: CryptoService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---------------------------------------------------------------- matching
@@ -754,6 +757,42 @@ export class RequestsService {
         payment_status: paymentStatus,
       },
     });
+
+    // Tell the accepting pharmacy that the patient confirmed the order and how they will pay.
+    try {
+      const staff = await this.db
+        .select({ userId: pharmacyStaff.userId })
+        .from(pharmacyStaff)
+        .where(
+          and(
+            eq(pharmacyStaff.pharmacyId, recipient.pharmacyId),
+            eq(pharmacyStaff.isActive, true),
+          ),
+        );
+      const userIds = [...new Set(staff.map((s) => s.userId))];
+      if (userIds.length) {
+        const fulfillment =
+          dto.fulfillment_type === 'DELIVERY' ? 'Home delivery' : 'Pickup';
+        const payment =
+          dto.payment_method === 'ON_DELIVERY'
+            ? 'Pay on delivery'
+            : dto.payment_method === 'CCP'
+              ? 'CCP'
+              : 'BaridiMob';
+        await this.notifications.notify({
+          userIds,
+          type: 'PHARMACY_ORDER_PLACED',
+          params: { reference: r.reference, fulfillment, payment },
+          data: {
+            request_id: r.id,
+            fulfillment_type: dto.fulfillment_type,
+            payment_method: dto.payment_method,
+          },
+        });
+      }
+    } catch {
+      // A failed notification must not undo the saved checkout.
+    }
 
     return {
       request_id: r.id,
