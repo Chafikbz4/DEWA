@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, Fragment, ReactNode, useEffect, useState } from "react";
 import { api, type OrderCheckout } from "@/lib/api";
 import { deliveredRequestCount, summarizePatientPayments } from "@/lib/patient-metrics";
+import { PatientAssistant } from "./patient-assistant";
 import { PharmacyAssistant } from "./pharmacy-assistant";
 import { DataTable, Icon, MetricCard, PageToolbar, PlatformShell, Role, StatusBadge } from "./platform";
 
@@ -85,8 +86,22 @@ export function PatientRoutes({ view = "home" }: { view?: string }) {
   const pharmacyItems = records(pharmacies.value);
   const payments = summarizePatientPayments(requestItems, orderItems);
   const deliveredCount = deliveredRequestCount(requestItems, orderItems);
+  // Coherent with the order board: a request a pharmacy accepted is an order in progress.
+  const acceptedRequestIds = new Set<string>();
+  requestItems.forEach((item) => {
+    const status = String(item.status ?? "").toUpperCase();
+    if (status === "ACCEPTED" || status === "OFFER_ACCEPTED" || item.checkout_completed_at || item.accepted_amount_centimes) {
+      acceptedRequestIds.add(String(item.id ?? item.reference ?? ""));
+    }
+  });
+  orderItems.forEach((item) => acceptedRequestIds.add(String(item.request_id ?? item.id ?? "")));
+  const ordersCount = acceptedRequestIds.size;
+  const completedCount = requestItems.filter((item) => {
+    const fulfillment = String(item.fulfillment_status ?? "").toUpperCase();
+    return fulfillment === "DELIVERED" || fulfillment === "PICKED_UP";
+  }).length + orderItems.filter((item) => ["DELIVERED", "COMPLETED"].includes(String(item.status ?? "").toUpperCase())).length;
   return <PlatformShell role="patient" title={title}><div className="welcome-strip"><div><span className="platform-kicker">PATIENT SPACE</span><h2>{title}</h2><p>Live information from your DEWA account.</p></div><StatusBadge tone="success">Account active</StatusBadge></div>
-    {current === "home" && <><div className="metrics-grid"><MetricCard label="Requests" value={String(requestItems.length)} detail="Prescriptions you submitted" /><MetricCard label="Orders" value={String(orderItems.length)} detail="Accepted pharmacy offers" tone="purple" /><MetricCard label="Delivered" value={String(deliveredCount)} detail="Orders received at home" tone="amber" /><MetricCard label="Paid" value={money(payments.total_paid_centimes)} detail={`${payments.paid_count} settled payment${payments.paid_count === 1 ? "" : "s"}`} tone="purple" /></div><div className="patient-dashboard-grid"><section className="platform-panel"><div className="panel-title"><div><span className="platform-kicker">RECENT REQUESTS</span><h3>Your latest activity</h3></div><Link href="/patient/requests" className="panel-link">View all <Icon name="arrow" size={15} /></Link></div><ApiState {...requests}><DataTable headers={["Reference", "Created", "Offers", "Status"]} rows={rowsFor(requestItems.slice(0, 5), [["reference", "reference"], ["created_at", "created_at"], ["offers_count", "offers_count"], ["status", "status"]])} /></ApiState></section><section className="platform-panel chatbot-panel"><span className="platform-kicker">DEWA ASSISTANT</span><h3>Ask about your medication</h3><p className="panel-copy">Chat with our medication assistant to understand your treatment and prepare questions for your pharmacist.</p><div className="chatbot-preview"><span><Icon name="shield" size={16} /> Medication guidance will be available here.</span></div><div className="chatbot-input"><input placeholder="Ask a question about your medication..." disabled /><button className="platform-primary" disabled>Send</button></div><small className="muted">Design preview — assistant functionality coming soon.</small></section></div></>}
+    {current === "home" && <><div className="metrics-grid"><MetricCard label="Requests" value={String(requestItems.length)} detail="Prescriptions you submitted" /><MetricCard label="Orders" value={String(ordersCount)} detail="Accepted by a pharmacy" tone="purple" /><MetricCard label="Completed" value={String(Math.max(completedCount, deliveredCount))} detail="Received or collected" tone="amber" /><MetricCard label="Paid" value={money(payments.total_paid_centimes)} detail={`${payments.paid_count} settled payment${payments.paid_count === 1 ? "" : "s"}`} tone="purple" /></div><div className="patient-dashboard-grid"><section className="platform-panel"><div className="panel-title"><div><span className="platform-kicker">RECENT REQUESTS</span><h3>Your latest activity</h3></div><Link href="/patient/requests" className="panel-link">View all <Icon name="arrow" size={15} /></Link></div><ApiState {...requests}><DataTable headers={["Reference", "Created", "Offers", "Status"]} rows={rowsFor(requestItems.slice(0, 5), [["reference", "reference"], ["created_at", "created_at"], ["offers_count", "offers_count"], ["status", "status"]])} /></ApiState></section><PatientAssistant /></div></>}
     {current === "requests" && <ApiState {...requests}><section className="platform-panel"><PageToolbar action={<Link href="/patient/requests/new" className="platform-secondary"><Icon name="plus" size={15} /> New request</Link>} /><DataTable headers={["Reference", "Location", "Created", "Offers", "Status"]} rows={requestItems.map((item) => [<strong key="reference">{text(item.reference ?? item.id)}</strong>, <span className="muted" key="location">{text([item.wilaya_name_fr ?? item.wilaya_name, item.commune_name_fr ?? item.commune_name].filter(Boolean).join(" — "), "Location not set")}</span>, <span className="muted" key="created">{date(item.created_at)}</span>, <span className="muted" key="offers">{text(item.offers_count, "0")}</span>, statusCell(item.status)])} /></section></ApiState>}
     {current === "orders" && <PatientOrderBoard requests={requests} orders={orders} />}
     {current === "delivery" && <PatientDeliveryTracking requests={requests} orders={orders} />}
@@ -967,7 +982,7 @@ export function PharmacyPage({ view = "home" }: { view?: string }) {
     <span className="muted" key="action">Open order</span>,
   ]);
   const orderBoardRows = [...requestBoardRows, ...orderOnlyRows];
-  return <PlatformShell role="pharmacy" title={title}><div className="welcome-strip"><div><span className="platform-kicker">PHARMACY SPACE</span><h2>{title}</h2><p>Live operational data from your pharmacy account.</p></div><StatusBadge tone={tone(data.status)}> {text(data.status, "Connected")} </StatusBadge></div>{current === "home" ? <ApiState {...summary}><><div className="metrics-grid"><MetricCard label="Requests received" value={text(data.requests_received, "0")} detail="Current reporting period" /><MetricCard label="Offers sent" value={text(data.offers_sent, "0")} detail={`Accepted: ${text(data.offers_accepted, "0")}`} tone="purple" /><MetricCard label="Revenue" value={money(data.revenue_centimes)} detail="Reported by DEWA" tone="amber" /></div><PharmacyAssistant pendingRequests={pendingRequestCount} /></></ApiState> : current === "requests" ? <ApiState {...requests}><section className="platform-panel"><PageToolbar /><DataTable headers={["Request", "Sent", "Urgency", "Status", "Decision"]} rows={requestRows} /></section>{selectedRequestId && <div className="order-modal-backdrop" onClick={closeRequest}>
+  return <PlatformShell role="pharmacy" title={title}><div className="welcome-strip"><div><span className="platform-kicker">PHARMACY SPACE</span><h2>{title}</h2><p>Live operational data from your pharmacy account.</p></div><StatusBadge tone={tone(data.status)}> {text(data.status, "Connected")} </StatusBadge></div>{current === "home" ? <ApiState {...summary}><><div className="metrics-grid"><MetricCard label="Requests received" value={text(data.requests_received, "0")} detail={`${text(pendingRequestCount, "0")} awaiting your response`} /><MetricCard label="Accepted" value={text(data.requests_accepted ?? data.offers_accepted, "0")} detail={`${text(data.orders_settled, "0")} handed over`} tone="purple" /><MetricCard label="Revenue" value={money(data.revenue_centimes)} detail="From delivered & collected orders" tone="amber" /></div><PharmacyAssistant pendingRequests={pendingRequestCount} /></></ApiState> : current === "requests" ? <ApiState {...requests}><section className="platform-panel"><PageToolbar /><DataTable headers={["Request", "Sent", "Urgency", "Status", "Decision"]} rows={requestRows} /></section>{selectedRequestId && <div className="order-modal-backdrop" onClick={closeRequest}>
   <div className="order-modal request-modal" role="dialog" aria-modal="true" aria-labelledby="request-modal-title" onClick={(event) => event.stopPropagation()}>
     <div className="order-modal-header">
       <div><span className="platform-kicker">REQUEST REVIEW</span><h2 id="request-modal-title">{text(requestDetail?.reference, "Loading request...")}</h2></div>
@@ -983,8 +998,27 @@ export function PharmacyPage({ view = "home" }: { view?: string }) {
         <div><span>Received</span><strong>{date(requestDetail.sent_at ?? requestDetail.created_at)}</strong></div>
       </div>
       {requestDetail.checkout_completed_at && <div className="request-modal-choice"><Icon name="cart" size={16} /><span>{fulfillmentLabel(requestDetail.fulfillment_type)} · {paymentBoardLabel(requestDetail, null)}</span></div>}
-      <div className="request-files">
-        {requestDetail.can_view_prescription === true ? detailFiles.map((file) => file.access_url ? <a className="request-file-card" href={String(file.access_url)} target="_blank" rel="noreferrer" key={String(file.file_id)}><strong>View certificate</strong><span>Open the uploaded prescription</span></a> : null) : <p className="panel-copy">The certificate is not available for this staff role or consent.</p>}
+      <div className="request-certificates">
+        {requestDetail.can_view_prescription === true
+          ? detailFiles.length
+            ? detailFiles.map((file, index) => file.access_url ? (
+                <a className="request-certificate" href={String(file.access_url)} target="_blank" rel="noreferrer" key={String(file.file_id)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={String(file.access_url)}
+                    alt={`Prescription page ${index + 1}`}
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                      const fallback = event.currentTarget.parentElement?.querySelector(".request-certificate-fallback");
+                      if (fallback) (fallback as HTMLElement).style.display = "flex";
+                    }}
+                  />
+                  <span className="request-certificate-fallback" style={{ display: "none" }}><Icon name="file" size={22} /> Open prescription file</span>
+                  <span className="request-certificate-open"><Icon name="arrow" size={13} /> Open full size</span>
+                </a>
+              ) : null)
+            : <p className="panel-copy">No certificate was attached to this request.</p>
+          : <p className="panel-copy">The certificate is not available for this staff role or consent.</p>}
       </div>
       {canAcceptSelected ? <div className="request-decision">
         <div className="request-decision-head"><span className="platform-kicker">YOUR DECISION</span><p className="panel-copy">Enter the total price the patient will pay, then accept. Reject only if you cannot supply this prescription.</p></div>

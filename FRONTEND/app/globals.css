@@ -547,3 +547,49 @@ button { cursor: pointer; }
 }
 
 
+
+/* --- UX refinements: form fields, login role chooser, inline certificate --- */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+.preference-form label, .stock-form > label, .form-grid label { display: grid; gap: 7px; color: #51666a; font-size: 11px; font-weight: 700; }
+.preference-form input, .preference-form select, .preference-form textarea,
+.stock-form input:not([type="file"]), .stock-form select, .stock-form textarea,
+.form-grid input, .form-grid select, .form-grid textarea {
+  min-height: 42px; width: 100%; padding: 0 12px; border: 1px solid #d7e5e2; border-radius: 9px;
+  background: #fff; color: #17383b; font: inherit; font-size: 12px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.preference-form textarea, .stock-form textarea, .form-grid textarea { min-height: 84px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.preference-form input::placeholder, .form-grid input::placeholder, .stock-form input::placeholder { color: #a7b4b4; }
+.preference-form input:focus, .preference-form select:focus, .preference-form textarea:focus,
+.stock-form input:focus, .stock-form select:focus, .stock-form textarea:focus,
+.form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus,
+.auth-card input:focus, .request-accept-amount input:focus, .request-reject-box textarea:focus, .location-select select:focus {
+  border-color: #087d7c; box-shadow: 0 0 0 3px #087d7c1f;
+}
+.preference-form select, .stock-form select, .form-grid select {
+  appearance: none; cursor: pointer; padding-right: 34px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2387a09e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.profile-field-note { color: #8b999a; font-size: 10.5px; margin: -4px 0 0; }
+
+.login-role-grid { display: grid; gap: 10px; margin: 4px 0 2px; }
+.login-role-option { display: flex; align-items: center; gap: 12px; width: 100%; text-align: start; padding: 13px 14px; border: 1px solid #dde7e5; border-radius: 11px; background: #fff; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .05s; }
+.login-role-option:hover { border-color: #087d7c; box-shadow: 0 6px 18px #133b3b0f; }
+.login-role-option:active { transform: translateY(1px); }
+.login-role-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; color: #075b5e; background: #e4f5ee; }
+.login-role-option.purple .login-role-icon { color: #6a4fa6; background: #efeafc; }
+.login-role-option.amber .login-role-icon { color: #b9822f; background: #fdf1dd; }
+.login-role-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.login-role-text strong { font-size: 12.5px; color: #1a3a3c; }
+.login-role-text small { font-size: 10.5px; color: #8b999a; }
+.login-role-option > svg { color: #9fb0b0; flex: 0 0 auto; }
+.auth-back { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: #087d7c; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0; margin: 0 0 16px; }
+.auth-back svg { transform: rotate(180deg); }
+
+.request-certificates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 6px 0 2px; }
+.request-certificate { position: relative; display: block; border: 1px solid #d7e5e2; border-radius: 11px; overflow: hidden; background: #f5fbfa; text-decoration: none; }
+.request-certificate img { display: block; width: 100%; height: 190px; object-fit: cover; background: #fff; }
+.request-certificate-fallback { align-items: center; justify-content: center; gap: 8px; height: 150px; color: #087d7c; font-size: 11px; font-weight: 700; }
+.request-certificate-open { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 7px; font-size: 10px; font-weight: 700; color: #fff; background: rgba(11,74,76,.82); }
