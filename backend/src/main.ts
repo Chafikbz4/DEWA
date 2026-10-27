@@ -9,6 +9,11 @@ import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
 
 async function bootstrap() {
+  // On managed hosts (e.g. Render) use the injected public URL so signed file
+  // links and payment return URLs point at the live backend, not localhost.
+  if (!process.env.PUBLIC_BASE_URL && process.env.RENDER_EXTERNAL_URL) {
+    process.env.PUBLIC_BASE_URL = process.env.RENDER_EXTERNAL_URL;
+  }
   const logger =
     process.env.LOG_FORMAT === 'json'
       ? new JsonLogger((process.env.LOG_LEVEL as LogLevel | undefined) ?? 'log')

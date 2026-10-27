@@ -71,8 +71,11 @@ export function configureApp(app: INestApplication) {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+  // CORS_ORIGINS="*" allows any origin (demo / preview deployments). The API is
+  // token-based (no cookies), so this is safe; set explicit origins in production.
+  const allowAnyOrigin = origins.includes('*');
   app.enableCors({
-    origin: (origin, cb) => cb(null, !origin || origins.includes(origin)),
+    origin: (origin, cb) => cb(null, allowAnyOrigin || !origin || origins.includes(origin)),
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: [
       'Authorization',
