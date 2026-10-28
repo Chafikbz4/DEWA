@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
-import { api, clearSession, getSession } from "@/lib/api";
+import { clearSession, getSession } from "@/lib/api";
 
 type Icon = "grid" | "file" | "cart" | "store" | "truck" | "users" | "chart" | "shield" | "settings" | "bell" | "arrow" | "plus" | "search" | "logout";
 
@@ -52,7 +52,6 @@ function canAccessRole(role: Role, userRole: string) {
 export function PlatformShell({ role, title, children }: { role: Role; title: string; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [apiState, setApiState] = useState<"checking" | "connected" | "offline">("checking");
   const [authState, setAuthState] = useState<"checking" | "authorized" | "denied">("checking");
   const menus = roleMenus[role];
   const settingsHref = role === "patient" ? "/settings" : `/${role === "driver" ? "delivery" : role}/settings`;
@@ -70,21 +69,10 @@ export function PlatformShell({ role, title, children }: { role: Role; title: st
     }, 0);
     return () => window.clearTimeout(timer);
   }, [role, router]);
-  useEffect(() => {
-    if (authState !== "authorized") return;
-    const checks: Record<Role, () => Promise<unknown>> = {
-      patient: api.me,
-      pharmacy: api.pharmacySummary,
-      driver: api.activeDeliveryJobs,
-      company: api.deliveryCompany,
-      admin: api.adminPermissions,
-    };
-    checks[role]().then(() => setApiState("connected")).catch(() => setApiState("offline"));
-  }, [role, authState]);
   if (authState !== "authorized") return <main className="auth-page"><div className="auth-card"><span className="platform-kicker">SECURE ACCESS</span><h1>{authState === "checking" ? "Checking your session..." : "Sign in required"}</h1><p>{authState === "checking" ? "Loading your DEWA workspace." : "Please sign in with an account that has access to this workspace."}</p></div></main>;
   return <main className="platform-shell">
     <aside className="platform-sidebar"><Link className="platform-brand" href="/"><span className="platform-logo">+</span>dewa</Link><p className="platform-menu-label">{role === "admin" ? "BACK-OFFICE" : role.toUpperCase()}</p><nav>{menus.map(([label, icon, href]) => <Link className={pathname === href ? "platform-link active" : "platform-link"} href={href} key={href}><Icon name={icon} />{label}</Link>)}</nav><div className="platform-sidebar-bottom"><Link className={pathname === settingsHref ? "platform-link active" : "platform-link"} href={settingsHref}><Icon name="settings" />Settings</Link><Link className="platform-link" href="/login" onClick={clearSession}><Icon name="logout" />Sign out</Link></div></aside>
-    <section className="platform-main"><header className="platform-header"><div><span className="platform-kicker">DEWA PLATFORM</span><h1>{title}</h1></div><div className="platform-header-actions"><span className={`api-connection ${apiState}`}><i />{apiState === "checking" ? "Connecting..." : apiState === "connected" ? "API connected" : "Demo mode"}</span><Link className="platform-icon-button" href={notificationsHref} aria-label="Notifications"><Icon name="bell" /></Link><span className="platform-avatar">{role === "admin" ? "SA" : role === "patient" ? "AB" : "DW"}</span></div></header><div className="platform-body">{children}</div></section>
+    <section className="platform-main"><header className="platform-header"><div><span className="platform-kicker">DEWA PLATFORM</span><h1>{title}</h1></div><div className="platform-header-actions"><Link className="platform-icon-button" href={notificationsHref} aria-label="Notifications"><Icon name="bell" /></Link><span className="platform-avatar">{role === "admin" ? "SA" : role === "patient" ? "AB" : "DW"}</span></div></header><div className="platform-body">{children}</div></section>
   </main>;
 }
 
