@@ -62,6 +62,15 @@ export class EnvironmentVariables {
   @IsBoolean()
   TRUST_PROXY = false;
 
+  /**
+   * Demo only: when true, self-registered patient/pharmacy accounts are created
+   * ACTIVE with their identifier marked verified and no OTP is sent, so users can
+   * sign in immediately. Keep false in production.
+   */
+  @Transform(toBool)
+  @IsBoolean()
+  AUTO_ACTIVATE_ACCOUNTS = false;
+
   // ---- Secrets ----
   @IsString()
   @MinLength(32)

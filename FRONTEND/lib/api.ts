@@ -184,13 +184,13 @@ export async function apiRequest<T>(
 
 export const api = {
   registerPatient: (payload: unknown, language: Language = "fr") =>
-    apiRequest<{ target_masked?: string }>("/auth/register/patient", { method: "POST", body: JSON.stringify(payload), language }),
+    apiRequest<{ target_masked?: string; otp_sent?: boolean }>("/auth/register/patient", { method: "POST", body: JSON.stringify(payload), language }),
   registerPharmacy: (payload: unknown, language: Language = "fr") =>
-    apiRequest<{ target_masked?: string }>("/auth/register/pharmacy", { method: "POST", body: JSON.stringify(payload), language }),
+    apiRequest<{ target_masked?: string; otp_sent?: boolean }>("/auth/register/pharmacy", { method: "POST", body: JSON.stringify(payload), language }),
   registerDriver: (payload: unknown, language: Language = "fr") =>
-    apiRequest<{ target_masked?: string }>("/auth/register/driver", { method: "POST", body: JSON.stringify(payload), language }),
+    apiRequest<{ target_masked?: string; otp_sent?: boolean }>("/auth/register/driver", { method: "POST", body: JSON.stringify(payload), language }),
   registerCompany: (payload: unknown, language: Language = "fr") =>
-    apiRequest<{ target_masked?: string }>("/auth/register/delivery-company", { method: "POST", body: JSON.stringify(payload), language }),
+    apiRequest<{ target_masked?: string; otp_sent?: boolean }>("/auth/register/delivery-company", { method: "POST", body: JSON.stringify(payload), language }),
   verifyOtp: (payload: unknown, language: Language = "fr") =>
     apiRequest<{ access_token: string; refresh_token: string; user: { role: string } }>("/auth/otp/verify", { method: "POST", body: JSON.stringify(payload), language }),
   login: (identifier: string, password: string, language: Language = "fr") =>

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { and, eq } from 'drizzle-orm';
 import { RequestMeta } from '../../../common/auth/decorators';
 import { CryptoService } from '../../../common/crypto/crypto.service';
@@ -55,6 +56,7 @@ export class RegistrationService {
     private readonly consents: ConsentsService,
     private readonly audit: AuditService,
     private readonly crypto: CryptoService,
+    private readonly config: ConfigService,
   ) {}
 
   registerPatient(dto: RegisterPatientDto, meta: RequestMeta) {
@@ -168,6 +170,15 @@ export class RegistrationService {
       : { type: 'PHONE', value: phone! };
     const lang = dto.preferred_language as Lang;
     const passwordHash = await hashPassword(dto.password); // always hash: constant timing
+    // Demo mode: activate immediately and skip OTP (Render free tier blocks SMTP).
+    const autoActivate = this.config.get<boolean>('AUTO_ACTIVATE_ACCOUNTS', false);
+    const activation = autoActivate
+      ? {
+          status: 'ACTIVE' as const,
+          emailVerifiedAt: email ? new Date() : null,
+          phoneVerifiedAt: !email && phone ? new Date() : null,
+        }
+      : { status: 'PENDING_VERIFICATION' as const };
 
     const byEmail = email
       ? await this.auth.findByIdentifier({ type: 'EMAIL', value: email })
@@ -190,6 +201,10 @@ export class RegistrationService {
       !existing.phoneVerifiedAt;
 
     if (existing && !reusable) {
+      // Same generic answer whether or not the identifier is taken (no enumeration).
+      if (autoActivate) {
+        return { otp_sent: false, target_masked: maskIdentifier(target), expires_in: 0 };
+      }
       return this.genericResponse(target, lang, null, true);
     }
 
@@ -201,7 +216,7 @@ export class RegistrationService {
           id = existing.id;
           await tx
             .update(users)
-            .set({ email, phone, passwordHash, preferredLanguage: lang })
+            .set({ email, phone, passwordHash, preferredLanguage: lang, ...activation })
             .where(eq(users.id, id));
           await tx
             .update(patientProfiles)
@@ -216,7 +231,7 @@ export class RegistrationService {
               phone,
               passwordHash,
               preferredLanguage: lang,
-              status: 'PENDING_VERIFICATION',
+              ...activation,
             })
             .returning({ id: users.id });
           id = created.id;
@@ -244,6 +259,9 @@ export class RegistrationService {
         return this.genericResponse(target, lang, null, true);
       }
       throw err;
+    }
+    if (autoActivate) {
+      return { otp_sent: false, target_masked: maskIdentifier(target), expires_in: 0 };
     }
     return this.genericResponse(target, lang, userId, false);
   }

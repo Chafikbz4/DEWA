@@ -33,6 +33,9 @@ services:
         value: local
       - key: JOBS_ENABLED
         value: "true"
+      # Demo: activate accounts on sign-up and skip OTP (Render free tier blocks SMTP).
+      - key: AUTO_ACTIVATE_ACCOUNTS
+        value: "true"
       - key: LOG_FORMAT
         value: pretty
       # Any origin is allowed for the demo (token-based API, no cookies).
