@@ -10,11 +10,11 @@
 >
 > ###  PHARMACY
 > **Email:** `testpharmacy@gmail.com`
-> **Password:** `TestPharmcay1234//`
+> **Password:** `Testtest@@12`
 >
 > ###  PATIENT
 > **Email:** `testpatient@gmail.com`
-> **Password:** `TestPatien1234//`
+> **Password:** `Testtest@@12`
 
 **How to sign in:** open **https://dewa-nu.vercel.app**, click **Sign in**, pick the
 account type (**Patient** or **Pharmacy**), then paste the email + password above.
